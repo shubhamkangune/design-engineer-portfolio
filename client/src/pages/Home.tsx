@@ -6,8 +6,6 @@ import {
   Mail, 
   Linkedin, 
   Phone, 
-  Menu, 
-  X, 
   ExternalLink, 
   Cog, 
   PenTool, 
@@ -22,7 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import Navigation from "@/components/Navigation";
 
 // Import Assets
 import blueprintHero from '@assets/generated_images/abstract_mechanical_blueprint_background.png';
@@ -32,97 +30,33 @@ import blankingDie from '@assets/generated_images/3d_blanking_die_cad.png';
 
 const RESUME_LINK = "/attached_assets/Shubham_Kangune_Mechanical_Design_Engineer_2025_1766061788798.pdf";
 
-const sections = [
-  { id: "about", label: "About" },
-  { id: "skills", label: "Skills" },
-  { id: "experience", label: "Experience" },
-  { id: "projects", label: "Projects" },
-  { id: "certifications", label: "Certifications" },
-  { id: "contact", label: "Contact" },
-];
+const fadeInUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2
+    }
+  }
+};
 
 export default function Home() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
-      setIsMenuOpen(false);
-    }
-  };
-
-  const fadeInUp = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
-  };
-
-  const staggerContainer = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2
-      }
     }
   };
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground selection:bg-primary selection:text-white">
       
-      {/* Navigation */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
-        <div className="container mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
-          <div className="font-heading font-bold text-xl md:text-2xl text-primary tracking-wider">
-            S.KANGUNE
-          </div>
-
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-8">
-            {sections.map((section) => (
-              <button
-                key={section.id}
-                onClick={() => scrollToSection(section.id)}
-                className="text-sm font-medium hover:text-primary transition-colors uppercase tracking-wide"
-              >
-                {section.label}
-              </button>
-            ))}
-            <Button asChild size="sm" className="ml-4 font-heading font-bold">
-              <a href={RESUME_LINK} target="_blank" rel="noopener noreferrer">
-                <Download className="mr-2 h-4 w-4" /> Resume
-              </a>
-            </Button>
-          </nav>
-
-          {/* Mobile Nav */}
-          <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-            <SheetTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="icon">
-                <Menu className="h-6 w-6" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-              <nav className="flex flex-col gap-6 mt-10">
-                {sections.map((section) => (
-                  <button
-                    key={section.id}
-                    onClick={() => scrollToSection(section.id)}
-                    className="text-lg font-medium hover:text-primary transition-colors text-left uppercase font-heading"
-                  >
-                    {section.label}
-                  </button>
-                ))}
-                <Button asChild className="w-full mt-4">
-                  <a href={RESUME_LINK} target="_blank" rel="noopener noreferrer">
-                    <Download className="mr-2 h-4 w-4" /> Download Resume
-                  </a>
-                </Button>
-              </nav>
-            </SheetContent>
-          </Sheet>
-        </div>
-      </header>
+      <Navigation />
 
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden pt-16">
@@ -155,10 +89,10 @@ export default function Home() {
               Transforming concepts into precision engineered solutions.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="font-heading font-bold text-lg h-12 px-8" onClick={() => scrollToSection('projects')}>
-                View My Work
+              <Button size="lg" className="font-heading font-bold text-lg h-12 px-8 cursor-pointer" onClick={() => window.location.href = '/designs'} data-testid="button-view-designs">
+                View My Designs
               </Button>
-              <Button variant="outline" size="lg" className="font-heading font-bold text-lg h-12 px-8" asChild>
+              <Button variant="outline" size="lg" className="font-heading font-bold text-lg h-12 px-8" asChild data-testid="button-download-cv">
                 <a href={RESUME_LINK} target="_blank" rel="noopener noreferrer">
                   <Download className="mr-2 h-4 w-4" /> Download CV
                 </a>
@@ -252,7 +186,7 @@ export default function Home() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               
-              <motion.div variants={fadeInUp} className="bg-secondary/20 border border-border p-6 rounded-lg hover:border-primary/50 transition-colors">
+              <motion.div variants={fadeInUp} className="bg-secondary/20 border border-border p-6 rounded-lg hover:border-primary/50 transition-colors" data-testid="skill-design">
                 <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 text-primary">
                   <DraftingCompass size={28} />
                 </div>
@@ -265,7 +199,7 @@ export default function Home() {
                 </ul>
               </motion.div>
 
-              <motion.div variants={fadeInUp} className="bg-secondary/20 border border-border p-6 rounded-lg hover:border-primary/50 transition-colors">
+              <motion.div variants={fadeInUp} className="bg-secondary/20 border border-border p-6 rounded-lg hover:border-primary/50 transition-colors" data-testid="skill-engineering">
                 <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 text-primary">
                   <Layers size={28} />
                 </div>
@@ -278,7 +212,7 @@ export default function Home() {
                 </ul>
               </motion.div>
 
-              <motion.div variants={fadeInUp} className="bg-secondary/20 border border-border p-6 rounded-lg hover:border-primary/50 transition-colors">
+              <motion.div variants={fadeInUp} className="bg-secondary/20 border border-border p-6 rounded-lg hover:border-primary/50 transition-colors" data-testid="skill-analysis">
                 <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 text-primary">
                   <Cog size={28} />
                 </div>
@@ -290,7 +224,7 @@ export default function Home() {
                 </ul>
               </motion.div>
 
-              <motion.div variants={fadeInUp} className="bg-secondary/20 border border-border p-6 rounded-lg hover:border-primary/50 transition-colors">
+              <motion.div variants={fadeInUp} className="bg-secondary/20 border border-border p-6 rounded-lg hover:border-primary/50 transition-colors" data-testid="skill-productivity">
                 <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 text-primary">
                   <Database size={28} />
                 </div>
@@ -350,7 +284,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Projects Section */}
+      {/* Featured Projects Preview */}
       <section id="projects" className="py-20 md:py-32 bg-background bg-grid-pattern">
         <div className="container px-4 md:px-6">
           <motion.div 
@@ -360,9 +294,9 @@ export default function Home() {
             variants={staggerContainer}
           >
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-5xl font-heading font-bold text-foreground mb-4">ENGINEERING PROJECTS</h2>
+              <h2 className="text-3xl md:text-5xl font-heading font-bold text-foreground mb-4">FEATURED PROJECTS</h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                Showcasing academic innovation and industrial design solutions.
+                A selection of mechanical designs. <Link href="/designs"><a className="text-primary hover:underline font-medium">View all designs</a></Link>
               </p>
             </div>
 
@@ -370,7 +304,7 @@ export default function Home() {
               
               {/* Project 1 */}
               <motion.div variants={fadeInUp}>
-                <Card className="h-full flex flex-col overflow-hidden group hover:shadow-lg transition-all duration-300 hover:border-primary/50">
+                <Card className="h-full flex flex-col overflow-hidden group hover:shadow-lg transition-all duration-300 hover:border-primary/50" data-testid="featured-project-leather">
                   <div className="h-48 overflow-hidden relative bg-secondary">
                     <img 
                       src={leatherCutter} 
@@ -390,7 +324,7 @@ export default function Home() {
                   <CardContent className="flex-grow">
                     <p className="text-sm text-muted-foreground">
                       Designed and developed a semi-automated machine to enhance artisans' efficiency. 
-                      Implemented an innovative cutting mechanism that reduced material waste and accelerated production.
+                      Implemented an innovative cutting mechanism that reduced material waste.
                     </p>
                   </CardContent>
                 </Card>
@@ -398,7 +332,7 @@ export default function Home() {
 
               {/* Project 2 */}
               <motion.div variants={fadeInUp}>
-                <Card className="h-full flex flex-col overflow-hidden group hover:shadow-lg transition-all duration-300 hover:border-primary/50">
+                <Card className="h-full flex flex-col overflow-hidden group hover:shadow-lg transition-all duration-300 hover:border-primary/50" data-testid="featured-project-hydraulic">
                   <div className="h-48 overflow-hidden relative bg-secondary">
                     <img 
                       src={hydraulicPress} 
@@ -418,7 +352,7 @@ export default function Home() {
                   <CardContent className="flex-grow">
                     <p className="text-sm text-muted-foreground">
                       Researched and applied Pascal's Law to design a functional press. 
-                      Coordinated fabrication and developed a testing procedure to validate pressure efficiency and safety.
+                      Coordinated fabrication and developed testing procedures.
                     </p>
                   </CardContent>
                 </Card>
@@ -426,7 +360,7 @@ export default function Home() {
 
               {/* Project 3 */}
               <motion.div variants={fadeInUp}>
-                <Card className="h-full flex flex-col overflow-hidden group hover:shadow-lg transition-all duration-300 hover:border-primary/50">
+                <Card className="h-full flex flex-col overflow-hidden group hover:shadow-lg transition-all duration-300 hover:border-primary/50" data-testid="featured-project-blanking">
                   <div className="h-48 overflow-hidden relative bg-secondary">
                     <img 
                       src={blankingDie} 
@@ -446,13 +380,25 @@ export default function Home() {
                   <CardContent className="flex-grow">
                     <p className="text-sm text-muted-foreground">
                       Designed complex blanking dies with a focus on precision and durability.
-                      Optimized geometry for better material usage and reduced wear during the manufacturing process.
+                      Optimized for better material usage and reduced wear.
                     </p>
                   </CardContent>
                 </Card>
               </motion.div>
 
             </div>
+
+            {/* View All Button */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="text-center mt-12"
+            >
+              <Button size="lg" className="font-heading font-bold text-lg h-12 px-8 cursor-pointer" onClick={() => window.location.href = '/designs'} data-testid="button-view-all-designs">
+                View All Designs
+              </Button>
+            </motion.div>
           </motion.div>
         </div>
       </section>
@@ -465,7 +411,7 @@ export default function Home() {
           </div>
           <div className="flex flex-wrap justify-center gap-6">
             {["Catia V5 (Skill-Lync)", "Autocad Certified (Disha Institute)", "Fusion 360 (Autodesk)"].map((cert, i) => (
-              <div key={i} className="flex items-center gap-3 bg-background px-6 py-4 rounded-lg border border-border shadow-sm">
+              <div key={i} className="flex items-center gap-3 bg-background px-6 py-4 rounded-lg border border-border shadow-sm" data-testid={`cert-${i}`}>
                 <div className="bg-primary/10 p-2 rounded-full">
                   <AwardIcon />
                 </div>
@@ -489,19 +435,19 @@ export default function Home() {
               </p>
               
               <div className="space-y-4 pt-6">
-                <a href="mailto:shubhamcsc4656@gmail.com" className="flex items-center gap-4 text-xl hover:text-white transition-colors">
+                <a href="mailto:shubhamcsc4656@gmail.com" className="flex items-center gap-4 text-xl hover:text-white transition-colors" data-testid="contact-email">
                   <div className="bg-white/10 p-3 rounded-full">
                     <Mail className="w-6 h-6" />
                   </div>
                   shubhamcsc4656@gmail.com
                 </a>
-                <a href="tel:8459117697" className="flex items-center gap-4 text-xl hover:text-white transition-colors">
+                <a href="tel:8459117697" className="flex items-center gap-4 text-xl hover:text-white transition-colors" data-testid="contact-phone">
                   <div className="bg-white/10 p-3 rounded-full">
                     <Phone className="w-6 h-6" />
                   </div>
                   +91 84591 17697
                 </a>
-                <a href="https://www.linkedin.com/in/shubhamkangune/" target="_blank" className="flex items-center gap-4 text-xl hover:text-white transition-colors">
+                <a href="https://www.linkedin.com/in/shubhamkangune/" target="_blank" className="flex items-center gap-4 text-xl hover:text-white transition-colors" data-testid="contact-linkedin">
                   <div className="bg-white/10 p-3 rounded-full">
                     <Linkedin className="w-6 h-6" />
                   </div>
@@ -516,22 +462,22 @@ export default function Home() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Name</label>
-                    <Input placeholder="Your Name" />
+                    <Input placeholder="Your Name" data-testid="form-name" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Email</label>
-                    <Input placeholder="your@email.com" type="email" />
+                    <Input placeholder="your@email.com" type="email" data-testid="form-email" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Subject</label>
-                  <Input placeholder="Job Opportunity / Inquiry" />
+                  <Input placeholder="Job Opportunity / Inquiry" data-testid="form-subject" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Message</label>
-                  <Textarea placeholder="Hello Shubham, I would like to discuss..." className="min-h-[120px]" />
+                  <Textarea placeholder="Hello Shubham, I would like to discuss..." className="min-h-[120px]" data-testid="form-message" />
                 </div>
-                <Button className="w-full font-bold h-12 text-lg">Send Message</Button>
+                <Button className="w-full font-bold h-12 text-lg" data-testid="button-send-message">Send Message</Button>
               </form>
             </div>
 
@@ -566,7 +512,7 @@ function AwardIcon() {
       className="lucide lucide-award"
     >
       <circle cx="12" cy="8" r="6" />
-      <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" />
+      <path d="M15.477 12.89 L17 22l-5-3-5 3 1.523-9.11" />
     </svg>
   );
 }
