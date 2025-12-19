@@ -21,6 +21,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
+import emailjs from "@emailjs/browser";
+import { toast } from "@/hooks/use-toast";
 
 // Import Assets
 import blueprintHero from '@assets/generated_images/abstract_mechanical_blueprint_background.png';
@@ -52,6 +54,53 @@ export default function Home() {
       element.scrollIntoView({ behavior: "smooth" });
     }
   };
+
+  // Contact form state
+  const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
+  const [sending, setSending] = useState(false);
+
+  function onChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    const { name, value } = e.target;
+    setForm((s) => ({ ...s, [name]: value }));
+  }
+
+  async function handleContactSubmit(e: React.FormEvent) {
+    e.preventDefault();
+
+    // validation
+    if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
+      toast({ title: "Validation error", description: "Name, email and message are required." });
+      return;
+    }
+
+    const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+    const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+    const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
+    if (!serviceId || !templateId || !publicKey) {
+      toast({ title: "Email not configured", description: "Set VITE_EMAILJS_SERVICE_ID, VITE_EMAILJS_TEMPLATE_ID and VITE_EMAILJS_PUBLIC_KEY in your env." });
+      return;
+    }
+
+    setSending(true);
+
+    try {
+      await emailjs.send(serviceId, templateId, {
+        from_name: form.name,
+        from_email: form.email,
+        subject: form.subject || "Website contact",
+        message: form.message,
+      }, publicKey);
+
+      toast({ title: "Message sent", description: "Thanks — I'll get back to you soon." });
+      setForm({ name: "", email: "", subject: "", message: "" });
+    } catch (err: any) {
+      console.error("EmailJS error:", err);
+      toast({ title: "Send failed", description: err?.message || "Failed to send message." });
+    } finally {
+      setSending(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground selection:bg-primary selection:text-white">
@@ -458,26 +507,26 @@ export default function Home() {
 
             <div className="bg-background text-foreground p-8 rounded-xl shadow-2xl">
               <h3 className="text-2xl font-heading font-bold mb-6">Send a Message</h3>
-              <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+              <form className="space-y-4" onSubmit={handleContactSubmit}>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Name</label>
-                    <Input placeholder="Your Name" data-testid="form-name" />
+                    <Input name="name" placeholder="Your Name" value={form.name} onChange={onChange} data-testid="form-name" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Email</label>
-                    <Input placeholder="your@email.com" type="email" data-testid="form-email" />
+                    <Input name="email" placeholder="your@email.com" type="email" value={form.email} onChange={onChange} data-testid="form-email" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Subject</label>
-                  <Input placeholder="Job Opportunity / Inquiry" data-testid="form-subject" />
+                  <Input name="subject" placeholder="Job Opportunity / Inquiry" value={form.subject} onChange={onChange} data-testid="form-subject" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Message</label>
-                  <Textarea placeholder="Hello Shubham, I would like to discuss..." className="min-h-[120px]" data-testid="form-message" />
+                  <Textarea name="message" placeholder="Hello Shubham, I would like to discuss..." className="min-h-[120px]" value={form.message} onChange={onChange} data-testid="form-message" />
                 </div>
-                <Button className="w-full font-bold h-12 text-lg" data-testid="button-send-message">Send Message</Button>
+                <Button type="submit" className="w-full font-bold h-12 text-lg" data-testid="button-send-message" disabled={sending}>{sending ? "Sending..." : "Send Message"}</Button>
               </form>
             </div>
 
