@@ -4,3 +4,7 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+package-lock.json
+.replit
+replit.nix
+.env

@@ -178,7 +178,7 @@ export default function Designs() {
       <footer className="py-8 bg-background border-t border-border text-center text-muted-foreground text-sm">
         <div className="container">
           <p>© 2025 Shubham Kangune. All rights reserved.</p>
-          <p className="mt-2">Designed with Precision.</p>
+          <p className="mt-2">Designed & Developed by Shubham Kangune.</p>
         </div>
       </footer>
     </div>
