@@ -21,12 +21,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
-import emailjs from "@emailjs/browser";
+// Using Formspree for contact submissions (no backend required)
 import { toast } from "@/hooks/use-toast";
 
 // Import Assets
 import blueprintHero from '@assets/generated_images/abstract_mechanical_blueprint_background.png';
-import leatherCutter from '@assets/generated_images/3d_leather_cutting_machine_cad.png';
+// leather project images are served from client/public/projects/leather-strip-cutting/
 import hydraulicPress from '@assets/generated_images/3d_hydraulic_press_cad.png';
 import blankingDie from '@assets/generated_images/3d_blanking_die_cad.png';
 
@@ -72,35 +72,44 @@ export default function Home() {
       toast({ title: "Validation error", description: "Name, email and message are required." });
       return;
     }
-
-    const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-    const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-    const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
-
-    if (!serviceId || !templateId || !publicKey) {
-      toast({ title: "Email not configured", description: "Set VITE_EMAILJS_SERVICE_ID, VITE_EMAILJS_TEMPLATE_ID and VITE_EMAILJS_PUBLIC_KEY in your env." });
-      return;
-    }
+    // Use Formspree JSON endpoint (no backend). Endpoint provided by owner.
+    const FORMSPREE_ENDPOINT = 'https://formspree.io/f/xbdrgwyp';
 
     setSending(true);
 
     try {
-      await emailjs.send(serviceId, templateId, {
-        from_name: form.name,
-        from_email: form.email,
-        subject: form.subject || "Website contact",
-        message: form.message,
-      }, publicKey);
+      const res = await fetch(FORMSPREE_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          subject: form.subject || 'Website contact',
+          message: form.message,
+        }),
+      });
 
-      toast({ title: "Message sent", description: "Thanks — I'll get back to you soon." });
-      setForm({ name: "", email: "", subject: "", message: "" });
+      if (res.ok) {
+        toast({ title: 'Message sent', description: "Thanks — I'll get back to you soon." });
+        setForm({ name: '', email: '', subject: '', message: '' });
+        setSent(true);
+        // hide success box after a short interval
+        setTimeout(() => setSent(false), 8000);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        const errorMsg = data.error || 'Failed to send message.';
+        toast({ title: 'Send failed', description: errorMsg });
+      }
     } catch (err: any) {
-      console.error("EmailJS error:", err);
-      toast({ title: "Send failed", description: err?.message || "Failed to send message." });
+      console.error('Formspree error:', err);
+      toast({ title: 'Network error', description: 'Failed to send message.' });
     } finally {
       setSending(false);
     }
   }
+
+  // Inline success flag
+  const [sent, setSent] = useState(false);
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground selection:bg-primary selection:text-white">
@@ -354,12 +363,14 @@ export default function Home() {
               {/* Project 1 */}
               <motion.div variants={fadeInUp}>
                 <Card className="h-full flex flex-col overflow-hidden group hover:shadow-lg transition-all duration-300 hover:border-primary/50" data-testid="featured-project-leather">
-                  <div className="h-48 overflow-hidden relative bg-secondary">
-                    <img 
-                      src={leatherCutter} 
-                      alt="Leather Cutting Machine" 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                  <div className="h-48 sm:h-40 overflow-hidden relative bg-secondary">
+                        {/* Image moved to public folder for deployment: /projects/leather-strip-cutting/leather-main.jpg */}
+                        <img
+                          src="/projects/leather-strip-cutting/lather_main.jpg"
+                          srcSet="/projects/leather-strip-cutting/lather_main.jpg 1x, /projects/leather-strip-cutting/later_2.jpg 2x"
+                          alt="Leather Cutting Machine"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
                     <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                   <CardHeader>
@@ -528,6 +539,12 @@ export default function Home() {
                 </div>
                 <Button type="submit" className="w-full font-bold h-12 text-lg" data-testid="button-send-message" disabled={sending}>{sending ? "Sending..." : "Send Message"}</Button>
               </form>
+              {sent && (
+                <div className="mt-4 p-4 rounded-md bg-primary/10 border border-primary">
+                  <p className="font-medium text-primary">Message sent — thank you!</p>
+                  <p className="text-sm text-muted-foreground mt-1">I'll get back to you shortly.</p>
+                </div>
+              )}
             </div>
 
           </div>

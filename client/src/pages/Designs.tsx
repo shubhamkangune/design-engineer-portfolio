@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Navigation from "@/components/Navigation";
 
 // Import Assets
-import leatherCutter from '@assets/generated_images/3d_leather_cutting_machine_cad.png';
 import hydraulicPress from '@assets/generated_images/3d_hydraulic_press_cad.png';
 import blankingDie from '@assets/generated_images/3d_blanking_die_cad.png';
 
@@ -25,7 +24,9 @@ const designs: Design[] = [
     description: "Semi-automated machine designed to enhance leather artisans' efficiency with precision cutting mechanism.",
     software: ["SolidWorks", "CAD Design"],
     category: "Academic Project",
-    image: leatherCutter,
+    // image served from public folder: /projects/leather-strip-cutting/
+    // image served from public folder: /projects/leather-strip-cutting/
+    image: '/projects/leather-strip-cutting/lather_main.jpg',
     details: "Sponsored by Divyam Leather Crafts Pvt. Ltd. - Implemented innovative cutting mechanism reducing material waste and accelerating production.",
   },
   {
@@ -113,8 +114,10 @@ export default function Designs() {
                   
                   {/* Design Image */}
                   <div className="h-56 overflow-hidden relative bg-secondary">
-                    <img 
-                      src={design.image} 
+                    {/* design.image may be a public path; using srcSet for higher-density displays */}
+                    <img
+                      src={design.image}
+                      srcSet={design.id === 'leather-cutting' ? "/projects/leather-strip-cutting/lather_main.jpg 1x, /projects/leather-strip-cutting/later_2.jpg 2x" : undefined}
                       alt={design.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
