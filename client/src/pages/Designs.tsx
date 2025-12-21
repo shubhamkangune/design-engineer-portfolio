@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
+import PracticeCard from "@/components/PracticeCard";
+import practiceModels from "@/data/practiceModels";
 
 // Import Assets
 import hydraulicPress from '@assets/generated_images/3d_hydraulic_press_cad.png';
@@ -159,6 +161,13 @@ export default function Designs() {
                     )}
                   </CardContent>
                 </Card>
+              </motion.div>
+            ))}
+
+            {/* Practice CAD Models - rendered as reusable cards; add new entries in src/data/practiceModels.ts */}
+            {practiceModels.map((model) => (
+              <motion.div key={model.id} variants={fadeInUp} data-testid={`practice-card-${model.id}`}>
+                <PracticeCard model={model} />
               </motion.div>
             ))}
           </motion.div>
