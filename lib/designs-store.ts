@@ -29,7 +29,7 @@ const defaultDesigns: Design[] = [
     description: "Functional hydraulic system design based on Pascal's Law with fabrication and testing procedures.",
     software: ["CAD Design", "Hydraulics"],
     category: "Academic Project",
-    image: "/images/3d_hydraulic_press_cad.png",
+    image: "/projects/leather-strip-cutting/hydro.png",
     details: "Researched and applied Pascal's Law to design a functional press. Coordinated fabrication and developed testing procedure to validate efficiency.",
   },
   {
@@ -38,7 +38,7 @@ const defaultDesigns: Design[] = [
     description: "Optimized die design for precision sheet metal stamping with improved material usage and durability.",
     software: ["SolidWorks", "Tool & Die Design"],
     category: "Internship Work",
-    image: "/images/3d_blanking_die_cad.png",
+    image: "/projects/leather-strip-cutting/intern.png",
     details: "Designed at Maxpertise Technology Labs. Optimized geometry for better material usage and reduced wear during manufacturing.",
   },
 ]
