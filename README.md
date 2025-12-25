@@ -1,49 +1,36 @@
-# Mechanical Portfolio — Shubham Kangune
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-Designed & developed by Shubham Kangune.
+## Getting Started
 
-Professional portfolio showcasing mechanical design work, CAD models, tool & die design, and manufacturing process experience. This project is a self-developed static React + Vite application with a lightweight Express backend for handling contact form submissions.
-
-Key points
-- **Author:** Shubham Kangune — Designed & Developed by the author.
-- **Tech stack:** React (client), Vite (build), TypeScript, Express (server), Tailwind CSS.
-- **Email:** Contact form forwards messages to `CONTACT_EMAIL` configured via environment variables.
-
-Quick start (development)
-
-1. Copy the example environment file and fill in secrets:
+First, run the development server:
 
 ```bash
-cp .env.example .env
-# Edit .env: set SMTP_HOST, SMTP_USER, SMTP_PASS, CONTACT_EMAIL
-```
-
-2. Install dependencies and run locally:
-
-```bash
-npm install
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-Deployment
-- This project is suitable for deployment on Vercel, Netlify, or GitHub Pages (static client) with the Express API hosted on Vercel serverless functions or a small Node host.
-- For Vercel: ensure `VERCEL_URL` or `DEPLOYMENT_URL` is set (the included meta image plugin will use these env vars).
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-Environment variables
-- `PORT` (server port)
-- `NODE_ENV` (development|production)
-- `CONTACT_EMAIL` (email that receives contact form submissions)
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_SECURE` — SMTP credentials (use an app password for Gmail with 2FA)
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-Notes
-- All Replit-specific plugins and comments were removed. If you see any remaining references after pulling changes, run `git grep replit` to locate them.
-- To regenerate a clean lockfile:
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-```bash
-rm -f package-lock.json
-npm install
-```
+## Learn More
 
-If you want, I can also:
-- run `npm install` and regenerate `package-lock.json` here, or
-- add a small CI workflow and Vercel/GitHub Pages deployment instructions.
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
