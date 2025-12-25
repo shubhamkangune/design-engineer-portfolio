@@ -570,7 +570,7 @@ export default function HomePage() {
                 >
                   <div className="h-48 overflow-hidden relative bg-secondary">
                     <img
-                      src="/images/3d_hydraulic_press_cad.png"
+                      src="/projects/leather-strip-cutting/hydro.png"
                       alt="Hydraulic Press Machine"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
@@ -615,7 +615,7 @@ export default function HomePage() {
                 >
                   <div className="h-48 overflow-hidden relative bg-secondary">
                     <img
-                      src="/images/3d_blanking_die_cad.png"
+                      src="/projects/leather-strip-cutting/intern.png"
                       alt="Blanking Die Design"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
