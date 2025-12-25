@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const RESUME_LINK =
-  "/attached_assets/Shubham_Kangune_Mechanical_Design_Engineer_2025_1766061788798.pdf";
+  "/attached_assets/shubham_kangune_resume.pdf";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
