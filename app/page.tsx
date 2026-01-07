@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -13,6 +13,8 @@ import {
   Database,
   DraftingCompass,
   Layers,
+  User,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +28,18 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
+
+interface ProfileData {
+  profilePhoto: string;
+  name: string;
+  title: string;
+  tagline: string;
+  bio: string;
+  email: string;
+  phone: string;
+  location: string;
+  linkedin: string;
+}
 
 const RESUME_LINK =
   "/attached_assets/Shubham_Kangune_Mechanical_Design_Engineer_2025_1766061788798.pdf";
@@ -48,6 +62,8 @@ const staggerContainer = {
 export default function HomePage() {
   const router = useRouter();
 
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -60,6 +76,21 @@ export default function HomePage() {
     title: string;
     description: string;
   } | null>(null);
+
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const res = await fetch("/api/profile");
+        const data = await res.json();
+        if (data && !data.error) {
+          setProfile(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+      }
+    }
+    fetchProfile();
+  }, []);
 
   function toast({
     title,
@@ -160,20 +191,41 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
+            className="flex flex-col items-center"
           >
+            {/* Profile Photo */}
+            {profile?.profilePhoto && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="mb-8"
+              >
+                <div className="relative">
+                  <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-primary/30 shadow-2xl ring-4 ring-primary/10">
+                    <img
+                      src={profile.profilePhoto}
+                      alt={profile.name || "Profile"}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {/* Decorative ring */}
+                  <div className="absolute inset-0 rounded-full border-2 border-primary/20 animate-pulse" style={{ transform: 'scale(1.1)' }} />
+                </div>
+              </motion.div>
+            )}
+
             <h2 className="text-xl md:text-2xl font-medium text-muted-foreground mb-4 uppercase tracking-[0.2em]">
               Hello, I am
             </h2>
             <h1 className="text-5xl md:text-7xl lg:text-9xl font-heading font-bold text-primary mb-6 tracking-tighter">
-              SHUBHAM KANGUNE
+              {profile?.name || "SHUBHAM KANGUNE"}
             </h1>
             <p className="text-xl md:text-3xl text-foreground/80 font-light mb-8 max-w-3xl mx-auto">
-              Mechanical Design Engineer
+              {profile?.title || "Mechanical Design Engineer"}
             </p>
             <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-              Specializing in CAD design, tool & die development, and
-              manufacturing optimization. Transforming concepts into precision
-              engineered solutions.
+              {profile?.tagline || "Specializing in CAD design, tool & die development, and manufacturing optimization. Transforming concepts into precision engineered solutions."}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
@@ -218,7 +270,7 @@ export default function HomePage() {
             whileInView="visible"
             viewport={{ once: true }}
             variants={fadeInUp}
-            className="max-w-4xl mx-auto"
+            className="max-w-5xl mx-auto"
           >
             <div className="flex items-center gap-4 mb-8">
               <div className="h-1 w-12 bg-primary" />
@@ -227,35 +279,74 @@ export default function HomePage() {
               </h2>
             </div>
 
-            <div className="grid md:grid-cols-[2fr_1fr] gap-12 items-start">
+            <div className="grid md:grid-cols-[1fr_2fr_1fr] gap-8 items-start">
+              {/* Profile Photo in About Section */}
+              <div className="hidden md:flex flex-col items-center">
+                <div className="relative group">
+                  <div className="w-48 h-48 rounded-2xl overflow-hidden border-4 border-primary/20 shadow-xl bg-secondary">
+                    {profile?.profilePhoto ? (
+                      <img
+                        src={profile.profilePhoto}
+                        alt={profile.name || "Profile"}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <User className="h-20 w-20 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  {/* Decorative accent */}
+                  <div className="absolute -bottom-2 -right-2 w-full h-full border-2 border-primary/30 rounded-2xl -z-10" />
+                </div>
+                
+                {/* Quick Contact Info */}
+                {(profile?.location || profile?.email) && (
+                  <div className="mt-6 space-y-2 text-sm text-muted-foreground">
+                    {profile?.location && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-primary" />
+                        <span>{profile.location}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
-                <p>
-                  I am a passionate{" "}
-                  <strong className="text-primary font-medium">
-                    Mechanical Engineering graduate
-                  </strong>{" "}
-                  with a strong foundation in CAD design, tool and die
-                  development, and manufacturing processes.
-                </p>
-                <p>
-                  My academic journey and practical internship experiences have
-                  equipped me with proficiency in industry-standard tools like{" "}
-                  <span className="text-foreground font-medium">
-                    SolidWorks, CATIA, and AutoCAD
-                  </span>
-                  . I have hands-on experience in designing blanking dies,
-                  validating designs through simulation, and optimizing
-                  manufacturing workflows.
-                </p>
-                <p>
-                  I am eager to contribute as a Mechanical Design Engineer,
-                  leveraging my skills in
-                  <span className="text-foreground font-medium">
-                    {" "}
-                    GD&T, 2D/3D modelling, and design validation
-                  </span>{" "}
-                  to deliver efficient and innovative engineering solutions.
-                </p>
+                {profile?.bio ? (
+                  <p>{profile.bio}</p>
+                ) : (
+                  <>
+                    <p>
+                      I am a passionate{" "}
+                      <strong className="text-primary font-medium">
+                        Mechanical Engineering graduate
+                      </strong>{" "}
+                      with a strong foundation in CAD design, tool and die
+                      development, and manufacturing processes.
+                    </p>
+                    <p>
+                      My academic journey and practical internship experiences have
+                      equipped me with proficiency in industry-standard tools like{" "}
+                      <span className="text-foreground font-medium">
+                        SolidWorks, CATIA, and AutoCAD
+                      </span>
+                      . I have hands-on experience in designing blanking dies,
+                      validating designs through simulation, and optimizing
+                      manufacturing workflows.
+                    </p>
+                    <p>
+                      I am eager to contribute as a Mechanical Design Engineer,
+                      leveraging my skills in
+                      <span className="text-foreground font-medium">
+                        {" "}
+                        GD&T, 2D/3D modelling, and design validation
+                      </span>{" "}
+                      to deliver efficient and innovative engineering solutions.
+                    </p>
+                  </>
+                )}
               </div>
 
               <div className="bg-background p-6 rounded-lg border border-border shadow-sm space-y-4">

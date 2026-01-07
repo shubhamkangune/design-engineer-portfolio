@@ -35,6 +35,8 @@ import {
   Upload,
   Cog,
   GripVertical,
+  User,
+  Camera,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,6 +80,18 @@ interface PracticeModel {
   download?: string;
   tools?: string[];
   order?: number;
+}
+
+interface ProfileSettings {
+  profilePhoto: string;
+  name: string;
+  title: string;
+  tagline: string;
+  bio: string;
+  email: string;
+  phone: string;
+  location: string;
+  linkedin: string;
 }
 
 // Sortable card wrapper for drag-and-drop
@@ -198,7 +212,7 @@ function SortablePracticeCard({
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"designs" | "practice">("designs");
+  const [activeTab, setActiveTab] = useState<"designs" | "practice" | "profile">("designs");
   const [designs, setDesigns] = useState<Design[]>([]);
   const [practiceModels, setPracticeModels] = useState<PracticeModel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -216,6 +230,21 @@ export default function AdminDashboard() {
   >(null);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetPracticeConfirm, setResetPracticeConfirm] = useState(false);
+
+  // Profile state
+  const [profile, setProfile] = useState<ProfileSettings>({
+    profilePhoto: "",
+    name: "SHUBHAM KANGUNE",
+    title: "Mechanical Design Engineer",
+    tagline: "Transforming complex engineering challenges into innovative mechanical solutions",
+    bio: "",
+    email: "",
+    phone: "",
+    location: "",
+    linkedin: "",
+  });
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileSaved, setProfileSaved] = useState(false);
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -258,7 +287,20 @@ export default function AdminDashboard() {
     // Load data from API
     fetchDesigns();
     fetchPracticeModels();
+    fetchProfile();
   }, [router]);
+
+  async function fetchProfile() {
+    try {
+      const res = await fetch("/api/profile");
+      const data = await res.json();
+      if (data && !data.error) {
+        setProfile(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch profile:", error);
+    }
+  }
 
   async function fetchDesigns() {
     try {
@@ -548,6 +590,43 @@ export default function AdminDashboard() {
     }
   }
 
+  // Profile functions
+  function handleProfilePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Image size should be less than 2MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      setProfile({ ...profile, profilePhoto: base64 });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function handleSaveProfile() {
+    setSavingProfile(true);
+    setProfileSaved(false);
+    try {
+      await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profile),
+      });
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 3000);
+    } catch (error) {
+      console.error("Failed to save profile:", error);
+    } finally {
+      setSavingProfile(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -605,6 +684,17 @@ export default function AdminDashboard() {
               }`}
             >
               Practice Models ({practiceModels.length})
+            </button>
+            <button
+              onClick={() => setActiveTab("profile")}
+              className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 -mb-px flex items-center gap-2 ${
+                activeTab === "profile"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <User className="h-4 w-4" />
+              Profile
             </button>
           </div>
         </div>
@@ -733,7 +823,7 @@ export default function AdminDashboard() {
               </div>
             )}
           </>
-        ) : (
+        ) : activeTab === "practice" ? (
           <>
             {/* Practice Models Actions Bar */}
             <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center mb-8">
@@ -818,7 +908,225 @@ export default function AdminDashboard() {
               </div>
             )}
           </>
-        )}
+        ) : activeTab === "profile" ? (
+          <>
+            {/* Profile Settings */}
+            <div className="max-w-2xl mx-auto">
+              <div className="mb-8">
+                <h2 className="text-2xl font-heading font-bold">Profile Settings</h2>
+                <p className="text-muted-foreground">
+                  Update your profile photo and information displayed on the portfolio
+                </p>
+              </div>
+
+              {/* Profile Photo Upload */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Camera className="h-5 w-5" />
+                    Profile Photo
+                  </CardTitle>
+                  <CardDescription>
+                    Upload a professional headshot to display on your portfolio
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-6">
+                    {/* Photo Preview */}
+                    <div className="relative">
+                      <div className="w-32 h-32 rounded-full overflow-hidden bg-secondary border-4 border-primary/20 shadow-lg">
+                        {profile.profilePhoto ? (
+                          <img
+                            src={profile.profilePhoto}
+                            alt="Profile"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <User className="h-16 w-16 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      {/* Upload Button Overlay */}
+                      <label className="absolute bottom-0 right-0 cursor-pointer">
+                        <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors">
+                          <Camera className="h-5 w-5" />
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleProfilePhotoUpload}
+                        />
+                      </label>
+                    </div>
+
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Recommended: Square image, at least 400×400px, max 2MB
+                      </p>
+                      <div className="flex gap-2">
+                        <label className="cursor-pointer">
+                          <Button type="button" variant="outline" size="sm" asChild>
+                            <span>
+                              <Upload className="h-4 w-4 mr-2" />
+                              Upload Photo
+                            </span>
+                          </Button>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleProfilePhotoUpload}
+                          />
+                        </label>
+                        {profile.profilePhoto && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive"
+                            onClick={() => setProfile({ ...profile, profilePhoto: "" })}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Remove
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Profile Information */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle>Profile Information</CardTitle>
+                  <CardDescription>
+                    This information is displayed on your portfolio homepage
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Full Name</label>
+                      <Input
+                        value={profile.name}
+                        onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                        placeholder="Your full name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Job Title</label>
+                      <Input
+                        value={profile.title}
+                        onChange={(e) => setProfile({ ...profile, title: e.target.value })}
+                        placeholder="e.g., Mechanical Design Engineer"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Tagline</label>
+                    <Input
+                      value={profile.tagline}
+                      onChange={(e) => setProfile({ ...profile, tagline: e.target.value })}
+                      placeholder="A short tagline about yourself"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Bio</label>
+                    <Textarea
+                      value={profile.bio}
+                      onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                      placeholder="Tell visitors about yourself, your expertise, and what you do"
+                      rows={4}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Contact Information */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle>Contact Information</CardTitle>
+                  <CardDescription>
+                    How recruiters and companies can reach you
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Email</label>
+                      <Input
+                        type="email"
+                        value={profile.email}
+                        onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                        placeholder="your.email@example.com"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Phone</label>
+                      <Input
+                        type="tel"
+                        value={profile.phone}
+                        onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                        placeholder="+91 9876543210"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Location</label>
+                      <Input
+                        value={profile.location}
+                        onChange={(e) => setProfile({ ...profile, location: e.target.value })}
+                        placeholder="City, Country"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">LinkedIn URL</label>
+                      <Input
+                        type="url"
+                        value={profile.linkedin}
+                        onChange={(e) => setProfile({ ...profile, linkedin: e.target.value })}
+                        placeholder="https://linkedin.com/in/yourprofile"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Save Button */}
+              <div className="flex items-center gap-4">
+                <Button 
+                  onClick={handleSaveProfile} 
+                  disabled={savingProfile}
+                  className="px-8"
+                >
+                  {savingProfile ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Profile
+                    </>
+                  )}
+                </Button>
+                {profileSaved && (
+                  <span className="text-sm text-green-600 font-medium">
+                    ✓ Profile saved successfully!
+                  </span>
+                )}
+              </div>
+            </div>
+          </>
+        ) : null}
       </main>
 
       {/* Create/Edit Modal */}
