@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 import { getDatabase } from "@/lib/mongodb"
+export const revalidate = 60 // Cache for 60 seconds
+
 import { ObjectId } from "mongodb"
 
 export interface Design {

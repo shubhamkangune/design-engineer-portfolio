@@ -30,5 +30,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "client", "server", "script", "attached_assets", "shared", "drizzle.config.ts", "vite.config.ts", "vite-plugin-meta-images.ts"]
 }

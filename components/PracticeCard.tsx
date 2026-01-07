@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -19,36 +20,85 @@ interface PracticeModel {
   image: string;
   viewer?: string;
   download?: string;
+  tools?: string[];
+  order?: number;
 }
 
-export default function PracticeCard({ model }: { model: PracticeModel }) {
+// Blur placeholder for loading state
+const shimmer = `data:image/svg+xml;base64,${Buffer.from(
+  `<svg width="400" height="224" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="224" fill="#e5e7eb"/></svg>`
+).toString("base64")}`;
+
+export default function PracticeCard({
+  model,
+  priority = false,
+}: {
+  model: PracticeModel;
+  priority?: boolean;
+}) {
+  // Check if image is base64 or URL
+  const isBase64 = model.image?.startsWith("data:");
+
   return (
-    <Card className="h-full flex flex-col overflow-hidden group hover:shadow-lg transition-all duration-300 hover:border-primary/50">
+    <Card className="h-full flex flex-col overflow-hidden group hover:shadow-lg transition-all duration-300 hover:border-primary/50 relative">
       {/* Image (click opens preview dialog) */}
       <div className="h-56 overflow-hidden relative bg-secondary">
         <Dialog>
           <DialogTrigger asChild>
-            <button className="w-full h-full">
-              <img
-                src={model.image}
-                alt={model.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
+            <button className="w-full h-full relative">
+              {isBase64 ? (
+                <img
+                  src={model.image}
+                  alt={model.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  loading={priority ? "eager" : "lazy"}
+                />
+              ) : (
+                <Image
+                  src={model.image}
+                  alt={model.name}
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  placeholder="blur"
+                  blurDataURL={shimmer}
+                  priority={priority}
+                />
+              )}
             </button>
           </DialogTrigger>
 
           <DialogContent>
             <DialogTitle>{model.name}</DialogTitle>
             <DialogDescription className="mb-4">
-              Practice CAD Model — SolidWorks
+              Practice CAD Model
+              {model.tools && model.tools.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {model.tools.map((tool) => (
+                    <Badge key={tool} variant="outline" className="text-xs">
+                      {tool}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </DialogDescription>
 
-            <div className="mb-4">
-              <img
-                src={model.image}
-                alt={model.name}
-                className="w-full h-64 object-contain bg-muted-foreground/5"
-              />
+            <div className="mb-4 relative h-64">
+              {isBase64 ? (
+                <img
+                  src={model.image}
+                  alt={model.name}
+                  className="w-full h-full object-contain bg-muted-foreground/5"
+                />
+              ) : (
+                <Image
+                  src={model.image}
+                  alt={model.name}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 600px"
+                  className="object-contain bg-muted-foreground/5"
+                />
+              )}
             </div>
 
             <div className="flex gap-3 flex-col sm:flex-row">
@@ -64,20 +114,11 @@ export default function PracticeCard({ model }: { model: PracticeModel }) {
                   </Button>
                 </a>
               )}
-
-              {model.download ? (
-                <a href={model.download} className="w-full" download>
-                  <Button variant="outline" className="w-full">
-                    Download CAD
-                  </Button>
-                </a>
-              ) : null}
             </div>
 
             <DialogFooter>
               <p className="text-xs text-muted-foreground mt-4">
-                Opens Autodesk Viewer in a new tab. Download links point to
-                public/cad-files/
+                Opens Autodesk Viewer in a new tab.
               </p>
             </DialogFooter>
           </DialogContent>
@@ -96,9 +137,18 @@ export default function PracticeCard({ model }: { model: PracticeModel }) {
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="flex-grow">
-        <p className="text-sm text-muted-foreground">Tool: SolidWorks</p>
-      </CardContent>
+      <CardContent className="flex-grow" />
+
+      {/* Tools at bottom right */}
+      {model.tools && model.tools.length > 0 && (
+        <div className="absolute bottom-4 right-4 flex flex-wrap gap-1.5 justify-end max-w-[60%]">
+          {model.tools.map((tool) => (
+            <Badge key={tool} variant="secondary" className="text-xs font-medium shadow-sm">
+              {tool}
+            </Badge>
+          ))}
+        </div>
+      )}
     </Card>
   );
 }

@@ -4,6 +4,23 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
   Plus,
   Pencil,
   Trash2,
@@ -17,6 +34,7 @@ import {
   ExternalLink,
   Upload,
   Cog,
+  GripVertical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +76,124 @@ interface PracticeModel {
   image: string;
   viewer?: string;
   download?: string;
+  tools?: string[];
+  order?: number;
+}
+
+// Sortable card wrapper for drag-and-drop
+function SortablePracticeCard({
+  model,
+  onEdit,
+  onDelete,
+}: {
+  model: PracticeModel;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: model.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 1000 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative">
+      {/* Drag Handle - Always visible on top-left of card */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="absolute -top-2 -left-2 z-20 p-2 rounded-lg bg-white shadow-lg border-2 border-primary/20 cursor-grab active:cursor-grabbing hover:bg-primary/10 hover:border-primary transition-all"
+        title="Drag to reorder"
+      >
+        <GripVertical className="h-5 w-5 text-primary" />
+      </div>
+
+      <Card className="h-full flex flex-col overflow-hidden group hover:shadow-lg transition-all duration-300">
+        {/* Image */}
+        <div className="h-40 overflow-hidden relative bg-secondary">
+          <img
+            src={model.image}
+            alt={model.name}
+            className="w-full h-full object-cover"
+          />
+          {model.viewer && (
+            <div className="absolute top-2 right-2">
+              <Badge variant="secondary" className="text-xs">
+                <ExternalLink className="h-3 w-3 mr-1" />
+                3D Viewer
+              </Badge>
+            </div>
+          )}
+        </div>
+
+        {/* Content */}
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg line-clamp-1">{model.name}</CardTitle>
+          <CardDescription className="line-clamp-2">
+            {model.viewer && (
+              <a
+                href={model.viewer}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline flex items-center gap-1"
+              >
+                <ExternalLink className="h-3 w-3" />
+                View in 3D
+              </a>
+            )}
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="flex-grow">
+          {model.download && (
+            <Badge variant="outline" className="text-xs">
+              Download Available
+            </Badge>
+          )}
+          {model.tools && model.tools.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {model.tools.map((tool) => (
+                <Badge key={tool} variant="secondary" className="text-xs">
+                  {tool}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </CardContent>
+
+        {/* Actions */}
+        <div className="p-4 pt-0 flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1"
+            onClick={onEdit}
+          >
+            <Pencil className="h-4 w-4 mr-1" />
+            Edit
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+            onClick={onDelete}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
 }
 
 export default function AdminDashboard() {
@@ -67,6 +203,7 @@ export default function AdminDashboard() {
   const [practiceModels, setPracticeModels] = useState<PracticeModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [reordering, setReordering] = useState(false);
   const [editingDesign, setEditingDesign] = useState<Design | null>(null);
   const [editingPractice, setEditingPractice] = useState<PracticeModel | null>(
     null
@@ -79,6 +216,18 @@ export default function AdminDashboard() {
   >(null);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [resetPracticeConfirm, setResetPracticeConfirm] = useState(false);
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Form state for designs
   const [formData, setFormData] = useState({
@@ -96,6 +245,7 @@ export default function AdminDashboard() {
     image: "",
     viewer: "",
     download: "",
+    tools: [] as string[],
   });
 
   useEffect(() => {
@@ -133,6 +283,37 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error("Failed to fetch practice models:", error);
       setPracticeModels([]);
+    }
+  }
+
+  // Handle drag end for reordering practice models
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = practiceModels.findIndex((m) => m.id === active.id);
+      const newIndex = practiceModels.findIndex((m) => m.id === over.id);
+
+      const reordered = arrayMove(practiceModels, oldIndex, newIndex);
+      setPracticeModels(reordered);
+
+      // Save new order to backend
+      setReordering(true);
+      try {
+        await fetch("/api/practice-models/reorder", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderedIds: reordered.map((m) => m.id),
+          }),
+        });
+      } catch (error) {
+        console.error("Failed to save order:", error);
+        // Revert on error
+        await fetchPracticeModels();
+      } finally {
+        setReordering(false);
+      }
     }
   }
 
@@ -186,6 +367,7 @@ export default function AdminDashboard() {
       image: "",
       viewer: "",
       download: "",
+      tools: ["SolidWorks"],
     });
   }
 
@@ -286,6 +468,7 @@ export default function AdminDashboard() {
       image: "",
       viewer: "",
       download: "",
+      tools: ["SolidWorks"],
     });
     setIsCreatingPractice(true);
   }
@@ -296,6 +479,7 @@ export default function AdminDashboard() {
       image: model.image,
       viewer: model.viewer || "",
       download: model.download || "",
+      tools: model.tools && model.tools.length > 0 ? model.tools : ["SolidWorks"],
     });
     setEditingPractice(model);
   }
@@ -313,6 +497,7 @@ export default function AdminDashboard() {
               practiceFormData.image || "/projects/practice/placeholder.png",
             viewer: practiceFormData.viewer || undefined,
             download: practiceFormData.download || undefined,
+            tools: practiceFormData.tools || ["SolidWorks"],
           }),
         });
       } else if (editingPractice) {
@@ -324,6 +509,7 @@ export default function AdminDashboard() {
             image: practiceFormData.image,
             viewer: practiceFormData.viewer || undefined,
             download: practiceFormData.download || undefined,
+            tools: practiceFormData.tools || ["SolidWorks"],
           }),
         });
       }
@@ -577,88 +763,44 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Practice Models Grid */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <AnimatePresence>
-                {practiceModels.map((model) => (
-                  <motion.div
-                    key={model.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Card className="h-full flex flex-col overflow-hidden group hover:shadow-lg transition-all duration-300">
-                      {/* Image */}
-                      <div className="h-40 overflow-hidden relative bg-secondary">
-                        <img
-                          src={model.image}
-                          alt={model.name}
-                          className="w-full h-full object-cover"
-                        />
-                        {model.viewer && (
-                          <div className="absolute top-2 right-2">
-                            <Badge variant="secondary" className="text-xs">
-                              <ExternalLink className="h-3 w-3 mr-1" />
-                              3D Viewer
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
+            {/* Reordering indicator */}
+            {reordering && (
+              <div className="mb-4 p-3 bg-primary/10 rounded-lg flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm">Saving new order...</span>
+              </div>
+            )}
 
-                      {/* Content */}
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg line-clamp-1">
-                          {model.name}
-                        </CardTitle>
-                        <CardDescription className="line-clamp-2">
-                          {model.viewer && (
-                            <a
-                              href={model.viewer}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline flex items-center gap-1"
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                              View in 3D
-                            </a>
-                          )}
-                        </CardDescription>
-                      </CardHeader>
+            {/* Drag hint */}
+            {practiceModels.length > 1 && (
+              <p className="text-sm text-muted-foreground mb-4 flex items-center gap-2">
+                <GripVertical className="h-4 w-4" />
+                Drag cards to reorder. Changes are saved automatically.
+              </p>
+            )}
 
-                      <CardContent className="flex-grow">
-                        {model.download && (
-                          <Badge variant="outline" className="text-xs">
-                            Download Available
-                          </Badge>
-                        )}
-                      </CardContent>
-
-                      {/* Actions */}
-                      <div className="p-4 pt-0 flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => openEditPracticeModal(model)}
-                        >
-                          <Pencil className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                          onClick={() => setDeletePracticeConfirm(model.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </Card>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
+            {/* Practice Models Grid with Drag and Drop */}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={practiceModels.map((m) => m.id)}
+                strategy={rectSortingStrategy}
+              >
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {practiceModels.map((model) => (
+                    <SortablePracticeCard
+                      key={model.id}
+                      model={model}
+                      onEdit={() => openEditPracticeModal(model)}
+                      onDelete={() => setDeletePracticeConfirm(model.id)}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
 
             {practiceModels.length === 0 && (
               <div className="text-center py-16">
@@ -950,21 +1092,107 @@ export default function AdminDashboard() {
               </p>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Download URL</label>
-              <Input
-                value={practiceFormData.download}
-                onChange={(e) =>
-                  setPracticeFormData({
-                    ...practiceFormData,
-                    download: e.target.value,
-                  })
-                }
-                placeholder="e.g., /cad-files/model.sldprt"
-              />
-              <p className="text-xs text-muted-foreground">
-                Optional download link for CAD file
-              </p>
+            <div className="space-y-3">
+              <label className="text-sm font-medium">Design Tools *</label>
+              
+              {/* Preset Tool Buttons */}
+              <div className="flex flex-wrap gap-2 mb-3">
+                {["SolidWorks", "CATIA V5", "AutoCAD", "Fusion 360", "FreeCAD", "Inventor"].map((tool) => (
+                  <button
+                    key={tool}
+                    type="button"
+                    onClick={() => {
+                      const currentTools = practiceFormData.tools || [];
+                      const updated = currentTools.includes(tool)
+                        ? currentTools.filter((t) => t !== tool)
+                        : [...currentTools, tool];
+                      setPracticeFormData({
+                        ...practiceFormData,
+                        tools: updated,
+                      });
+                    }}
+                    className={`px-3 py-2 rounded-lg border-2 transition-all font-medium text-sm ${
+                      (practiceFormData.tools || []).includes(tool)
+                        ? "border-blue-600 bg-blue-600 text-white"
+                        : "border-gray-300 bg-white text-gray-700 hover:border-blue-600 hover:bg-blue-50"
+                    }`}
+                  >
+                    {tool}
+                  </button>
+                ))}
+              </div>
+
+              {/* Custom Tool Input */}
+              <div className="flex gap-2 mb-3">
+                <Input
+                  type="text"
+                  id="customToolInput"
+                  placeholder="Enter custom software name"
+                  className="flex-1"
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      const input = e.currentTarget;
+                      const customTool = input.value.trim();
+                      if (customTool) {
+                        const currentTools = practiceFormData.tools || [];
+                        if (!currentTools.includes(customTool)) {
+                          setPracticeFormData({
+                            ...practiceFormData,
+                            tools: [...currentTools, customTool],
+                          });
+                        }
+                        input.value = "";
+                      }
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const input = document.getElementById("customToolInput") as HTMLInputElement;
+                    const customTool = input?.value.trim();
+                    if (customTool) {
+                      const currentTools = practiceFormData.tools || [];
+                      if (!currentTools.includes(customTool)) {
+                        setPracticeFormData({
+                          ...practiceFormData,
+                          tools: [...currentTools, customTool],
+                        });
+                      }
+                      if (input) input.value = "";
+                    }
+                  }}
+                >
+                  Add
+                </Button>
+              </div>
+
+              {/* Display Selected Tools */}
+              {(practiceFormData.tools || []).length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {practiceFormData.tools.map((tool) => (
+                    <div
+                      key={tool}
+                      className="flex items-center gap-2 bg-blue-100 px-3 py-2 rounded-full text-sm border border-blue-300"
+                    >
+                      <span className="font-medium">{tool}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPracticeFormData({
+                            ...practiceFormData,
+                            tools: (practiceFormData.tools || []).filter((t) => t !== tool),
+                          });
+                        }}
+                        className="text-red-600 hover:text-red-800 font-bold text-lg leading-none"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

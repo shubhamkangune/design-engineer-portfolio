@@ -150,6 +150,7 @@ export default function HomePage() {
             src="/images/abstract_mechanical_blueprint_background.png"
             alt="Mechanical Blueprint Background"
             className="w-full h-full object-cover opacity-10"
+            loading="eager"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-background/0 via-background/50 to-background" />
         </div>

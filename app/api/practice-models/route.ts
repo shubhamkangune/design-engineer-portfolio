@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 import { getDatabase } from "@/lib/mongodb"
+export const revalidate = 60 // Cache for 60 seconds
+
 
 export interface PracticeModel {
   _id?: string
@@ -8,6 +10,8 @@ export interface PracticeModel {
   image: string // Can be URL path or base64
   viewer?: string // External Autodesk viewer link
   download?: string // Download link
+  tools?: string[] // Design tools/software used
+  order?: number // Display order for sorting
 }
 
 const defaultPracticeModels: Omit<PracticeModel, "_id">[] = [
@@ -17,12 +21,14 @@ const defaultPracticeModels: Omit<PracticeModel, "_id">[] = [
     image: "/projects/practice/v-block-assembly.png",
     viewer: "https://autode.sk/4qfPYu8",
     download: "/cad-files/v-block-assembly.sldasm",
+    order: 0,
   },
   {
     id: "flat-sprocket",
     name: "Flat Sprocket (Practice)",
     image: "/projects/practice/flat-sprocket.png",
     viewer: "https://autode.sk/3MPor4i",
+    order: 1,
   },
 ]
 
@@ -38,9 +44,21 @@ export async function GET() {
       await collection.insertMany(defaultPracticeModels)
     }
     
-    const models = await collection.find({}).toArray()
+    // Sort by order field, then by _id for consistent ordering
+    const models = await collection.find({}).sort({ order: 1, _id: 1 }).toArray()
     
-    return NextResponse.json(models)
+    // Add default "SolidWorks" tool and order for models without them
+    const modelsWithDefaults = models.map((model: any, index: number) => ({
+      ...model,
+      tools: model.tools && model.tools.length > 0 ? model.tools : ["SolidWorks"],
+      order: model.order ?? index,
+    }))
+    
+    return NextResponse.json(modelsWithDefaults, {
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+      },
+    })
   } catch (error) {
     console.error("Failed to fetch practice models:", error)
     // Return default models on error so UI doesn't break
