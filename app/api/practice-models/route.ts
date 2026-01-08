@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getDatabase } from "@/lib/mongodb"
-export const revalidate = 60 // Cache for 60 seconds
+export const revalidate = 300 // Cache for 5 minutes (300 seconds)
 
 
 export interface PracticeModel {
@@ -56,7 +56,7 @@ export async function GET() {
     
     return NextResponse.json(modelsWithDefaults, {
       headers: {
-        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
       },
     })
   } catch (error) {

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import imageCompression from "browser-image-compression";
 import {
   DndContext,
   closestCenter,
@@ -475,24 +476,41 @@ export default function AdminDashboard() {
     });
   }
 
-  // Convert file to base64
-  function handleImageUpload(
+  // Convert file to base64 with compression
+  async function handleImageUpload(
     e: React.ChangeEvent<HTMLInputElement>,
     type: "design" | "practice"
   ) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64 = reader.result as string;
-      if (type === "design") {
-        setFormData({ ...formData, image: base64 });
-      } else {
-        setPracticeFormData({ ...practiceFormData, image: base64 });
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      // Compression options
+      const options = {
+        maxSizeMB: 0.5, // 500KB max
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+        fileType: "image/webp",
+      };
+
+      // Compress image
+      const compressedFile = await imageCompression(file, options);
+      
+      // Convert to base64
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        if (type === "design") {
+          setFormData({ ...formData, image: base64 });
+        } else {
+          setPracticeFormData({ ...practiceFormData, image: base64 });
+        }
+      };
+      reader.readAsDataURL(compressedFile);
+    } catch (error) {
+      console.error("Error compressing image:", error);
+      alert("Failed to compress image. Please try a different image.");
+    }
   }
 
   async function handleSave() {
@@ -653,22 +671,33 @@ export default function AdminDashboard() {
   }
 
   // Profile functions
-  function handleProfilePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleProfilePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      alert("Image size should be less than 2MB");
-      return;
-    }
+    try {
+      // Compression options for profile photo
+      const options = {
+        maxSizeMB: 0.3, // 300KB max for profile photos
+        maxWidthOrHeight: 800,
+        useWebWorker: true,
+        fileType: "image/webp",
+      };
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64 = reader.result as string;
-      setProfile({ ...profile, profilePhoto: base64 });
-    };
-    reader.readAsDataURL(file);
+      // Compress image
+      const compressedFile = await imageCompression(file, options);
+      
+      // Convert to base64
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setProfile({ ...profile, profilePhoto: base64 });
+      };
+      reader.readAsDataURL(compressedFile);
+    } catch (error) {
+      console.error("Error compressing profile photo:", error);
+      alert("Failed to compress image. Please try a different image.");
+    }
   }
 
   function handleResumeUpload(e: React.ChangeEvent<HTMLInputElement>) {

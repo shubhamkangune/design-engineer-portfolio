@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getDatabase } from "@/lib/mongodb"
-export const revalidate = 60 // Cache for 60 seconds
+export const revalidate = 300 // Cache for 5 minutes (300 seconds)
 
 import { ObjectId } from "mongodb"
 
@@ -59,7 +59,11 @@ export async function GET() {
     
     const designs = await collection.find({}).toArray()
     
-    return NextResponse.json(designs)
+    return NextResponse.json(designs, {
+      headers: {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+      },
+    })
   } catch (error) {
     console.error("Failed to fetch designs:", error)
     // Return default designs on error so UI doesn't break

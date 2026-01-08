@@ -53,8 +53,8 @@ const staggerContainer = {
 };
 
 // Increased batch sizes for faster perceived loading
-const INITIAL_COUNT = 24;
-const LOAD_INCREMENT = 12;
+const INITIAL_COUNT = 50; // Show more items initially
+const LOAD_INCREMENT = 20; // Load more at once when scrolling
 
 // SWR fetcher
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -69,14 +69,19 @@ export default function Designs() {
   const { data: designs = [], isLoading: designsLoading } = useSWR<Design[]>(
     "/api/designs",
     fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 60000 }
+    { 
+      revalidateOnFocus: false, 
+      dedupingInterval: 300000, // 5 minutes cache
+      keepPreviousData: true // Keep showing old data while revalidating
+    }
   );
 
   const { data: practiceModels = [], isLoading: modelsLoading } = useSWR<
     PracticeModel[]
   >("/api/practice-models", fetcher, {
     revalidateOnFocus: false,
-    dedupingInterval: 60000,
+    dedupingInterval: 300000, // 5 minutes cache
+    keepPreviousData: true // Keep showing old data while revalidating
   });
 
   const loading = designsLoading || modelsLoading;
