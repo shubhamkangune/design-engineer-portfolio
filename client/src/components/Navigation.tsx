@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Download, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -12,6 +12,7 @@ interface NavigationProps {
 
 export default function Navigation({ currentPath }: NavigationProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [location, setLocation] = useLocation();
 
   const sections = [
     { id: "home", label: "Home", href: "/" },
@@ -27,9 +28,15 @@ export default function Navigation({ currentPath }: NavigationProps) {
     
     if (href.startsWith("/#")) {
       const sectionId = href.replace("/#", "");
-      const element = document.getElementById(sectionId);
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth" });
+      
+      // If not on home page, navigate using window.location to include hash
+      if (location !== "/") {
+        window.location.href = href;
+      } else {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
       }
     }
   };
