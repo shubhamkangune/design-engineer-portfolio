@@ -60,9 +60,16 @@ export default function Navigation() {
 
     if (href.startsWith("/#")) {
       const sectionId = href.replace("/#", "");
-      const element = document.getElementById(sectionId);
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth" });
+      
+      // If not on home page, navigate to home page with hash
+      if (window.location.pathname !== "/") {
+        window.location.href = href;
+      } else {
+        // On home page, smooth scroll to section
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
       }
     }
   };

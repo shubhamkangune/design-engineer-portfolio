@@ -18,7 +18,11 @@ export const metadata: Metadata = {
   description:
     "Portfolio of Shubham Kangune - Mechanical Design Engineer specializing in CAD design, tool & die development, and manufacturing optimization.",
   icons: {
-    icon: "/favicon.png",
+    icon: [
+      { url: "/favicon.png", type: "image/png" },
+    ],
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
   },
   openGraph: {
     title: "Shubham Kangune - Mechanical Design Engineer",
