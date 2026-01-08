@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import {
   Download,
   Mail,
@@ -29,6 +29,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
 
+interface SkillCategory {
+  icon: string;
+  title: string;
+  items: string[];
+}
+
 interface ProfileData {
   profilePhoto: string;
   name: string;
@@ -39,9 +45,11 @@ interface ProfileData {
   phone: string;
   location: string;
   linkedin: string;
+  skills?: SkillCategory[];
+  resumeUrl?: string;
 }
 
-const RESUME_LINK =
+const DEFAULT_RESUME_LINK =
   "/attached_assets/Shubham_Kangune_Mechanical_Design_Engineer_2025_1766061788798.pdf";
 
 const fadeInUp = {
@@ -58,6 +66,94 @@ const staggerContainer = {
     },
   },
 };
+
+// Icon mapping for skills
+const iconMap: { [key: string]: React.ReactNode } = {
+  DraftingCompass: <DraftingCompass size={28} />,
+  Layers: <Layers size={28} />,
+  Cog: <Cog size={28} />,
+  Database: <Database size={28} />,
+};
+
+// Typewriter effect component
+function TypewriterText({ text, className }: { text: string; className?: string }) {
+  const [displayText, setDisplayText] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showCursor, setShowCursor] = useState(true);
+
+  useEffect(() => {
+    if (currentIndex < text.length) {
+      const timeout = setTimeout(() => {
+        setDisplayText(prev => prev + text[currentIndex]);
+        setCurrentIndex(prev => prev + 1);
+      }, 100);
+      return () => clearTimeout(timeout);
+    }
+  }, [currentIndex, text]);
+
+  useEffect(() => {
+    const cursorInterval = setInterval(() => {
+      setShowCursor(prev => !prev);
+    }, 500);
+    return () => clearInterval(cursorInterval);
+  }, []);
+
+  return (
+    <span className={className}>
+      {displayText}
+      <span className={`${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity text-primary`}>|</span>
+    </span>
+  );
+}
+
+// 3D Tilt Card Component for Profile Photo
+function TiltCard({ children, className }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  const mouseXSpring = useSpring(x, { stiffness: 300, damping: 30 });
+  const mouseYSpring = useSpring(y, { stiffness: 300, damping: 30 });
+
+  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["17.5deg", "-17.5deg"]);
+  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-17.5deg", "17.5deg"]);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    const xPct = mouseX / width - 0.5;
+    const yPct = mouseY / height - 0.5;
+    x.set(xPct);
+    y.set(yPct);
+  };
+
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        rotateY,
+        rotateX,
+        transformStyle: "preserve-3d",
+      }}
+      className={className}
+    >
+      <div style={{ transform: "translateZ(75px)", transformStyle: "preserve-3d" }}>
+        {children}
+      </div>
+    </motion.div>
+  );
+}
 
 export default function HomePage() {
   const router = useRouter();
@@ -80,7 +176,12 @@ export default function HomePage() {
   useEffect(() => {
     async function fetchProfile() {
       try {
-        const res = await fetch("/api/profile");
+        const res = await fetch("/api/profile", {
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache",
+          },
+        });
         const data = await res.json();
         if (data && !data.error) {
           setProfile(data);
@@ -193,7 +294,7 @@ export default function HomePage() {
             transition={{ duration: 0.8 }}
             className="flex flex-col items-center"
           >
-            {/* Profile Photo */}
+            {/* Profile Photo with Clean Hover Effect */}
             {profile?.profilePhoto && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -201,16 +302,18 @@ export default function HomePage() {
                 transition={{ duration: 0.6, delay: 0.2 }}
                 className="mb-8"
               >
-                <div className="relative">
-                  <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-primary/30 shadow-2xl ring-4 ring-primary/10">
+                <div className="relative group cursor-pointer">
+                  {/* Rotating border animation */}
+                  <div className="absolute -inset-1 bg-gradient-to-r from-primary via-blue-400 to-primary rounded-full opacity-75 blur group-hover:opacity-100 transition-opacity duration-500 animate-spin-slow" />
+                  
+                  {/* Main photo container */}
+                  <div className="relative w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 rounded-full overflow-hidden border-4 border-background shadow-2xl">
                     <img
                       src={profile.profilePhoto}
                       alt={profile.name || "Profile"}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
                   </div>
-                  {/* Decorative ring */}
-                  <div className="absolute inset-0 rounded-full border-2 border-primary/20 animate-pulse" style={{ transform: 'scale(1.1)' }} />
                 </div>
               </motion.div>
             )}
@@ -221,9 +324,12 @@ export default function HomePage() {
             <h1 className="text-5xl md:text-7xl lg:text-9xl font-heading font-bold text-primary mb-6 tracking-tighter">
               {profile?.name || "SHUBHAM KANGUNE"}
             </h1>
-            <p className="text-xl md:text-3xl text-foreground/80 font-light mb-8 max-w-3xl mx-auto">
-              {profile?.title || "Mechanical Design Engineer"}
-            </p>
+            <div className="text-xl md:text-3xl text-foreground/80 font-light mb-8 max-w-3xl mx-auto h-10 md:h-12">
+              <TypewriterText 
+                text={profile?.title || "Mechanical Design Engineer"} 
+                className="bg-gradient-to-r from-primary via-blue-500 to-primary bg-clip-text text-transparent font-medium"
+              />
+            </div>
             <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
               {profile?.tagline || "Specializing in CAD design, tool & die development, and manufacturing optimization. Transforming concepts into precision engineered solutions."}
             </p>
@@ -243,7 +349,7 @@ export default function HomePage() {
                 asChild
                 data-testid="button-download-cv"
               >
-                <a href={RESUME_LINK} target="_blank" rel="noopener noreferrer">
+                <a href={profile?.resumeUrl || DEFAULT_RESUME_LINK} target="_blank" rel="noopener noreferrer">
                   <Download className="mr-2 h-4 w-4" /> Download CV
                 </a>
               </Button>
@@ -279,40 +385,7 @@ export default function HomePage() {
               </h2>
             </div>
 
-            <div className="grid md:grid-cols-[1fr_2fr_1fr] gap-8 items-start">
-              {/* Profile Photo in About Section */}
-              <div className="hidden md:flex flex-col items-center">
-                <div className="relative group">
-                  <div className="w-48 h-48 rounded-2xl overflow-hidden border-4 border-primary/20 shadow-xl bg-secondary">
-                    {profile?.profilePhoto ? (
-                      <img
-                        src={profile.profilePhoto}
-                        alt={profile.name || "Profile"}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <User className="h-20 w-20 text-muted-foreground" />
-                      </div>
-                    )}
-                  </div>
-                  {/* Decorative accent */}
-                  <div className="absolute -bottom-2 -right-2 w-full h-full border-2 border-primary/30 rounded-2xl -z-10" />
-                </div>
-                
-                {/* Quick Contact Info */}
-                {(profile?.location || profile?.email) && (
-                  <div className="mt-6 space-y-2 text-sm text-muted-foreground">
-                    {profile?.location && (
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-primary" />
-                        <span>{profile.location}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
+            <div className="grid md:grid-cols-[2fr_1fr] gap-8 items-start">
               <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
                 {profile?.bio ? (
                   <p>{profile.bio}</p>
@@ -346,6 +419,14 @@ export default function HomePage() {
                       to deliver efficient and innovative engineering solutions.
                     </p>
                   </>
+                )}
+                
+                {/* Quick Contact Info */}
+                {profile?.location && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPin className="h-4 w-4 text-primary" />
+                    <span>{profile.location}</span>
+                  </div>
                 )}
               </div>
 
@@ -403,121 +484,33 @@ export default function HomePage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <motion.div
-                variants={fadeInUp}
-                className="bg-secondary/20 border border-border p-6 rounded-lg hover:border-primary/50 transition-colors"
-                data-testid="skill-design"
-              >
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 text-primary">
-                  <DraftingCompass size={28} />
-                </div>
-                <h3 className="font-heading font-bold text-xl mb-3">
-                  Design & Modelling
-                </h3>
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-primary rounded-full" />{" "}
-                    SolidWorks
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-primary rounded-full" />{" "}
-                    CATIA V5
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-primary rounded-full" />{" "}
-                    AutoCAD
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-primary rounded-full" />{" "}
-                    Fusion 360
-                  </li>
-                </ul>
-              </motion.div>
-
-              <motion.div
-                variants={fadeInUp}
-                className="bg-secondary/20 border border-border p-6 rounded-lg hover:border-primary/50 transition-colors"
-                data-testid="skill-engineering"
-              >
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 text-primary">
-                  <Layers size={28} />
-                </div>
-                <h3 className="font-heading font-bold text-xl mb-3">
-                  Engineering Core
-                </h3>
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-primary rounded-full" />{" "}
-                    Mechanical Design
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-primary rounded-full" /> Tool
-                    & Die Design
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-primary rounded-full" /> GD&T
-                    Standards
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-primary rounded-full" />{" "}
-                    Design Validation
-                  </li>
-                </ul>
-              </motion.div>
-
-              <motion.div
-                variants={fadeInUp}
-                className="bg-secondary/20 border border-border p-6 rounded-lg hover:border-primary/50 transition-colors"
-                data-testid="skill-analysis"
-              >
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 text-primary">
-                  <Cog size={28} />
-                </div>
-                <h3 className="font-heading font-bold text-xl mb-3">
-                  Analysis & Sim
-                </h3>
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-primary rounded-full" />{" "}
-                    ANSYS
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-primary rounded-full" />{" "}
-                    Structural Analysis
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-primary rounded-full" />{" "}
-                    Simulation
-                  </li>
-                </ul>
-              </motion.div>
-
-              <motion.div
-                variants={fadeInUp}
-                className="bg-secondary/20 border border-border p-6 rounded-lg hover:border-primary/50 transition-colors"
-                data-testid="skill-productivity"
-              >
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 text-primary">
-                  <Database size={28} />
-                </div>
-                <h3 className="font-heading font-bold text-xl mb-3">
-                  Productivity & Code
-                </h3>
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-primary rounded-full" />{" "}
-                    Python, C, C++
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-primary rounded-full" /> MS
-                    Excel & Office
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-primary rounded-full" />{" "}
-                    Documentation
-                  </li>
-                </ul>
-              </motion.div>
+              {(profile?.skills || [
+                { icon: "DraftingCompass", title: "CAD Software", items: ["CATIA V5", "SolidWorks", "AutoCAD", "Fusion 360"] },
+                { icon: "Layers", title: "Plastic Product Design", items: ["Wall Thickness", "Ribs & Bosses", "Snaps & Clips", "Parting Line"] },
+                { icon: "Cog", title: "Engineering Fundamentals", items: ["GD&T", "Tool & Die Design", "ANSYS", "2D/3D Drawings"] },
+                { icon: "Database", title: "Tooling & Manufacturing", items: ["Injection Molding", "Sliders & Lifters", "Blanking Die", "DFM"] }
+              ]).map((category, index) => (
+                <motion.div
+                  key={index}
+                  variants={fadeInUp}
+                  className="bg-secondary/20 border border-border p-6 rounded-lg hover:border-primary/50 hover:shadow-lg transition-all duration-300"
+                >
+                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 text-primary">
+                    {iconMap[category.icon] || <Cog size={28} />}
+                  </div>
+                  <h3 className="font-heading font-bold text-xl mb-3">
+                    {category.title}
+                  </h3>
+                  <ul className="space-y-2">
+                    {category.items.map((item, itemIndex) => (
+                      <li key={itemIndex} className="flex items-center gap-2 text-muted-foreground">
+                        <div className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </motion.div>
+              ))}
             </div>
           </motion.div>
         </div>
@@ -560,19 +553,18 @@ export default function HomePage() {
 
                   <ul className="space-y-3 text-muted-foreground list-disc pl-5">
                     <li>
-                      Designed and optimized{" "}
+                      Assisted in designing{" "}
                       <strong className="text-foreground">blanking dies</strong>{" "}
-                      in SolidWorks, improving manufacturing efficiency and
-                      accuracy.
+                      using SolidWorks under senior engineer guidance.
                     </li>
                     <li>
-                      Collaborated with senior engineers to deliver die design
-                      projects within strict deadlines with{" "}
-                      <strong className="text-foreground">zero errors</strong>.
+                      Learned 2D/3D modeling workflows, BOM preparation, and{" "}
+                      <strong className="text-foreground">manufacturing drawing</strong>{" "}
+                      standards.
                     </li>
                     <li>
-                      Gained hands-on experience in industrial design standards
-                      and production workflows.
+                      Gained practical exposure to tool design principles and
+                      sheet metal component geometry.
                     </li>
                   </ul>
                 </div>
@@ -775,9 +767,9 @@ export default function HomePage() {
           </div>
           <div className="flex flex-wrap justify-center gap-6">
             {[
-              "Catia V5 (Skill-Lync)",
-              "Autocad Certified (Disha Institute)",
-              "Fusion 360 (Autodesk)",
+              "CATIA V5 - Plastic Product Design (Skill-Lync)",
+              "AutoCAD Certified (Disha Institute)",
+              "Fusion 360 Basics (Autodesk)",
             ].map((cert, i) => (
               <div
                 key={i}
@@ -797,7 +789,7 @@ export default function HomePage() {
       {/* Contact Section */}
       <section
         id="contact"
-        className="py-20 md:py-32 bg-primary text-primary-foreground"
+        className="py-20 md:py-32 bg-[#0145a3] text-primary-foreground"
       >
         <div className="container px-4 md:px-6">
           <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -806,9 +798,9 @@ export default function HomePage() {
                 LET&apos;S BUILD SOMETHING GREAT
               </h2>
               <p className="text-primary-foreground/80 text-lg leading-relaxed max-w-md">
-                I am currently open to opportunities as a Mechanical Design
-                Engineer. Feel free to reach out for collaborations or interview
-                requests.
+                I am actively seeking entry-level opportunities as a Mechanical
+                Design Engineer or Plastic Product Design Trainee. Open to
+                learning and contributing in an industry environment.
               </p>
 
               <div className="space-y-4 pt-6">

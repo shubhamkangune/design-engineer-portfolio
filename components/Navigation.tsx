@@ -1,16 +1,50 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Download, Menu } from "lucide-react";
+import { Download, Menu, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
-const RESUME_LINK =
+const DEFAULT_RESUME_LINK =
   "/attached_assets/shubham_kangune_resume.pdf";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+  const [resumeUrl, setResumeUrl] = useState(DEFAULT_RESUME_LINK);
+
+  useEffect(() => {
+    // Check for saved theme preference or system preference
+    const savedTheme = localStorage.getItem("theme");
+    const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    
+    if (savedTheme === "dark" || (!savedTheme && systemPrefersDark)) {
+      setIsDark(true);
+      document.documentElement.classList.add("dark");
+    }
+
+    // Fetch profile to get dynamic resume URL
+    fetch("/api/profile")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.resumeUrl) {
+          setResumeUrl(data.resumeUrl);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  const toggleTheme = () => {
+    setIsDark(!isDark);
+    if (isDark) {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    } else {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    }
+  };
 
   const sections = [
     { id: "home", label: "Home", href: "/" },
@@ -68,13 +102,28 @@ export default function Navigation() {
           )}
           <Button asChild size="sm" className="ml-4 font-heading font-bold">
             <a
-              href={RESUME_LINK}
+              href={resumeUrl}
               target="_blank"
               rel="noopener noreferrer"
               data-testid="nav-resume"
             >
               <Download className="mr-2 h-4 w-4" /> Resume
             </a>
+          </Button>
+          
+          {/* Dark Mode Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="ml-2"
+            data-testid="theme-toggle"
+          >
+            {isDark ? (
+              <Sun className="h-5 w-5 text-yellow-500" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
           </Button>
         </nav>
 
@@ -114,9 +163,26 @@ export default function Navigation() {
                 className="w-full mt-4"
                 data-testid="mobile-nav-resume"
               >
-                <a href={RESUME_LINK} target="_blank" rel="noopener noreferrer">
+                <a href={resumeUrl} target="_blank" rel="noopener noreferrer">
                   <Download className="mr-2 h-4 w-4" /> Download Resume
                 </a>
+              </Button>
+              
+              {/* Mobile Dark Mode Toggle */}
+              <Button
+                variant="outline"
+                onClick={toggleTheme}
+                className="w-full mt-2 flex items-center justify-center gap-2"
+              >
+                {isDark ? (
+                  <>
+                    <Sun className="h-5 w-5 text-yellow-500" /> Light Mode
+                  </>
+                ) : (
+                  <>
+                    <Moon className="h-5 w-5" /> Dark Mode
+                  </>
+                )}
               </Button>
             </nav>
           </SheetContent>

@@ -37,6 +37,9 @@ import {
   GripVertical,
   User,
   Camera,
+  Sun,
+  Moon,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,7 +95,39 @@ interface ProfileSettings {
   phone: string;
   location: string;
   linkedin: string;
+  skills: SkillCategory[];
+  resumeUrl: string;
+  resumeFileName?: string;
 }
+
+interface SkillCategory {
+  icon: string;
+  title: string;
+  items: string[];
+}
+
+const defaultSkills: SkillCategory[] = [
+  {
+    icon: "DraftingCompass",
+    title: "CAD Software",
+    items: ["CATIA V5 (Part, Assembly, Drafting)", "SolidWorks", "AutoCAD (2D Drafting)", "Fusion 360"]
+  },
+  {
+    icon: "Layers",
+    title: "Plastic Product Design",
+    items: ["Wall Thickness & Draft Angles", "Ribs, Bosses & Gussets", "Snaps, Clips & Locators", "Parting Line & Tooling Direction"]
+  },
+  {
+    icon: "Cog",
+    title: "Engineering Fundamentals",
+    items: ["GD&T (Datums, Profile, Position)", "Tool & Die Design Basics", "ANSYS (Basic Structural)", "2D/3D Technical Drawings"]
+  },
+  {
+    icon: "Database",
+    title: "Tooling & Manufacturing",
+    items: ["Injection Molding Basics", "Undercuts, Sliders & Lifters", "Blanking Die Design", "DFM Awareness"]
+  }
+];
 
 // Sortable card wrapper for drag-and-drop
 function SortablePracticeCard({
@@ -242,9 +277,36 @@ export default function AdminDashboard() {
     phone: "",
     location: "",
     linkedin: "",
+    skills: defaultSkills,
+    resumeUrl: "/attached_assets/Shubham_Kangune_Mechanical_Design_Engineer_2025_1766061788798.pdf",
   });
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
+  
+  // Dark mode state
+  const [isDark, setIsDark] = useState(false);
+  
+  useEffect(() => {
+    // Check for saved theme preference or system preference
+    const savedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    
+    if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
+      setIsDark(true);
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
+  
+  function toggleTheme() {
+    setIsDark(!isDark);
+    if (isDark) {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    } else {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    }
+  }
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -609,15 +671,47 @@ export default function AdminDashboard() {
     reader.readAsDataURL(file);
   }
 
+  function handleResumeUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check if it's a PDF
+    if (file.type !== "application/pdf") {
+      alert("Please upload a PDF file");
+      return;
+    }
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Resume file size should be less than 5MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      setProfile({ ...profile, resumeUrl: base64, resumeFileName: file.name });
+      alert("Resume uploaded! Click 'Save Profile' to save your changes.");
+    };
+    reader.readAsDataURL(file);
+  }
+
   async function handleSaveProfile() {
     setSavingProfile(true);
     setProfileSaved(false);
     try {
-      await fetch("/api/profile", {
+      const response = await fetch("/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(profile),
       });
+      const savedProfile = await response.json();
+      
+      // Update local state with the saved profile (includes converted resume URL)
+      if (savedProfile && !savedProfile.error) {
+        setProfile(savedProfile);
+      }
+      
       setProfileSaved(true);
       setTimeout(() => setProfileSaved(false), 3000);
     } catch (error) {
@@ -647,6 +741,14 @@ export default function AdminDashboard() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleTheme}
+              className="h-9 w-9 p-0"
+            >
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
             <Button variant="ghost" size="sm" asChild>
               <Link href="/">
                 <Home className="h-4 w-4 mr-2" />
@@ -1096,6 +1198,236 @@ export default function AdminDashboard() {
                       />
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Resume Upload */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Resume / CV
+                  </CardTitle>
+                  <CardDescription>
+                    Upload your resume PDF to allow visitors to download it
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-6">
+                    {/* Resume Preview */}
+                    <div className="relative">
+                      <div className="w-20 h-24 rounded-lg overflow-hidden bg-secondary border-2 border-primary/20 shadow-lg flex items-center justify-center">
+                        <FileText className="h-10 w-10 text-primary" />
+                      </div>
+                    </div>
+
+                    <div className="flex-1">
+                      {profile.resumeUrl ? (
+                        <div className="mb-3">
+                          <p className="text-sm text-green-600 font-medium mb-1">
+                            ✓ Resume uploaded
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {profile.resumeUrl.startsWith("data:") 
+                              ? (profile.resumeFileName || "New PDF ready to save") 
+                              : profile.resumeUrl.split("/").pop()}
+                          </p>
+                          {profile.resumeUrl.startsWith("data:") && (
+                            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                              ⚠️ Click "Save Profile" to save this resume
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground mb-3">
+                          No resume uploaded yet. Upload a PDF file (max 5MB).
+                        </p>
+                      )}
+                      <div className="flex gap-2">
+                        <label className="cursor-pointer">
+                          <Button type="button" variant="outline" size="sm" asChild>
+                            <span>
+                              <Upload className="h-4 w-4 mr-2" />
+                              Upload Resume
+                            </span>
+                          </Button>
+                          <input
+                            type="file"
+                            accept="application/pdf"
+                            className="hidden"
+                            onChange={handleResumeUpload}
+                          />
+                        </label>
+                        {profile.resumeUrl && (
+                          <>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              asChild
+                            >
+                              <a href={profile.resumeUrl} target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="h-4 w-4 mr-2" />
+                                Preview
+                              </a>
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive"
+                              onClick={() => setProfile({ ...profile, resumeUrl: "" })}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Remove
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* URL Input as alternative */}
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <label className="text-sm font-medium">Or enter Resume URL</label>
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        value={profile.resumeUrl?.startsWith("data:") ? "" : profile.resumeUrl || ""}
+                        onChange={(e) => setProfile({ ...profile, resumeUrl: e.target.value })}
+                        placeholder="/attached_assets/your-resume.pdf"
+                        className="flex-1"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Use a path from /public folder or an external URL
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Skills Section */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Cog className="h-5 w-5" />
+                    Technical Skills
+                  </CardTitle>
+                  <CardDescription>
+                    Manage your skill categories displayed in the Technical Expertise section
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {(profile.skills || defaultSkills).map((category, catIndex) => (
+                    <div key={catIndex} className="border border-border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <select
+                            value={category.icon}
+                            onChange={(e) => {
+                              const newSkills = [...(profile.skills || defaultSkills)];
+                              newSkills[catIndex] = { ...newSkills[catIndex], icon: e.target.value };
+                              setProfile({ ...profile, skills: newSkills });
+                            }}
+                            className="px-2 py-1 border border-border rounded text-sm bg-background"
+                          >
+                            <option value="DraftingCompass">📐 Drafting</option>
+                            <option value="Layers">📚 Layers</option>
+                            <option value="Cog">⚙️ Cog</option>
+                            <option value="Database">💾 Database</option>
+                            <option value="Wrench">🔧 Wrench</option>
+                            <option value="Code">💻 Code</option>
+                          </select>
+                          <Input
+                            value={category.title}
+                            onChange={(e) => {
+                              const newSkills = [...(profile.skills || defaultSkills)];
+                              newSkills[catIndex] = { ...newSkills[catIndex], title: e.target.value };
+                              setProfile({ ...profile, skills: newSkills });
+                            }}
+                            className="font-bold w-48"
+                            placeholder="Category Title"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive"
+                          onClick={() => {
+                            const newSkills = (profile.skills || defaultSkills).filter((_, i) => i !== catIndex);
+                            setProfile({ ...profile, skills: newSkills });
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        {category.items.map((item, itemIndex) => (
+                          <div key={itemIndex} className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-primary rounded-full" />
+                            <Input
+                              value={item}
+                              onChange={(e) => {
+                                const newSkills = [...(profile.skills || defaultSkills)];
+                                const newItems = [...newSkills[catIndex].items];
+                                newItems[itemIndex] = e.target.value;
+                                newSkills[catIndex] = { ...newSkills[catIndex], items: newItems };
+                                setProfile({ ...profile, skills: newSkills });
+                              }}
+                              className="flex-1 h-8 text-sm"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-destructive"
+                              onClick={() => {
+                                const newSkills = [...(profile.skills || defaultSkills)];
+                                const newItems = newSkills[catIndex].items.filter((_, i) => i !== itemIndex);
+                                newSkills[catIndex] = { ...newSkills[catIndex], items: newItems };
+                                setProfile({ ...profile, skills: newSkills });
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="mt-2"
+                          onClick={() => {
+                            const newSkills = [...(profile.skills || defaultSkills)];
+                            newSkills[catIndex] = {
+                              ...newSkills[catIndex],
+                              items: [...newSkills[catIndex].items, "New Skill"]
+                            };
+                            setProfile({ ...profile, skills: newSkills });
+                          }}
+                        >
+                          <Plus className="h-4 w-4 mr-1" /> Add Skill
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      const newSkills = [
+                        ...(profile.skills || defaultSkills),
+                        { icon: "Cog", title: "New Category", items: ["Skill 1", "Skill 2"] }
+                      ];
+                      setProfile({ ...profile, skills: newSkills });
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" /> Add Skill Category
+                  </Button>
                 </CardContent>
               </Card>
 

@@ -483,7 +483,7 @@ export default function Home() {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-20 md:py-32 bg-primary text-primary-foreground">
+      <section id="contact" className="py-20 md:py-32 bg-[#0145a3] text-primary-foreground">
         <div className="container px-4 md:px-6">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             
