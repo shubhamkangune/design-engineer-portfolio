@@ -609,8 +609,9 @@ export default function AdminDashboard() {
   async function handleSavePractice() {
     setSaving(true);
     try {
+      let response;
       if (isCreatingPractice) {
-        await fetch("/api/practice-models", {
+        response = await fetch("/api/practice-models", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -623,7 +624,7 @@ export default function AdminDashboard() {
           }),
         });
       } else if (editingPractice) {
-        await fetch(`/api/practice-models/${editingPractice.id}`, {
+        response = await fetch(`/api/practice-models/${editingPractice.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -635,10 +636,20 @@ export default function AdminDashboard() {
           }),
         });
       }
+      
+      if (response && !response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+        throw new Error(errorData.error || `Failed to save practice model (${response.status})`);
+      }
+      
       await fetchPracticeModels();
       closePracticeModal();
+      
+      alert(isCreatingPractice ? "Practice model created successfully!" : "Practice model updated successfully!");
     } catch (error) {
       console.error("Failed to save practice model:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to save practice model";
+      alert(`Error: ${errorMessage}`);
     } finally {
       setSaving(false);
     }
@@ -647,11 +658,22 @@ export default function AdminDashboard() {
   async function handleDeletePractice(id: string) {
     setSaving(true);
     try {
-      await fetch(`/api/practice-models/${id}`, { method: "DELETE" });
+      const response = await fetch(`/api/practice-models/${id}`, { method: "DELETE" });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+        throw new Error(errorData.error || `Failed to delete practice model (${response.status})`);
+      }
+      
       await fetchPracticeModels();
       setDeletePracticeConfirm(null);
+      
+      // Show success message
+      alert("Practice model deleted successfully!");
     } catch (error) {
       console.error("Failed to delete practice model:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete practice model";
+      alert(`Error: ${errorMessage}`);
     } finally {
       setSaving(false);
     }
