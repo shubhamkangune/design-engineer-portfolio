@@ -25,7 +25,7 @@ import Navigation from "@/components/Navigation";
 import { toast } from "@/hooks/use-toast";
 
 // Import Assets
-import blueprintHero from '@assets/generated_images/abstract_mechanical_blueprint_background.png';
+import blueprintHero from '@assets/generated_images/abstract_mechanical_blueprint_background.webp';
 // leather project images are served from client/public/projects/leather-strip-cutting/
 import hydraulicPress from '@assets/generated_images/3d_hydraulic_press_cad.png';
 import blankingDie from '@assets/generated_images/3d_blanking_die_cad.png';

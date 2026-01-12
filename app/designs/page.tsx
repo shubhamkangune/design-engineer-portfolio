@@ -24,6 +24,7 @@ interface Design {
   image: string;
   category: string;
   details?: string;
+  visible?: boolean;
 }
 
 interface PracticeModel {
@@ -35,6 +36,7 @@ interface PracticeModel {
   download?: string;
   tools?: string[];
   order?: number;
+  visible?: boolean;
 }
 
 const fadeInUp = {

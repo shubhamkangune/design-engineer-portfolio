@@ -12,6 +12,7 @@ export interface PracticeModel {
   download?: string // Download link
   tools?: string[] // Design tools/software used
   order?: number // Display order for sorting
+  visible?: boolean
 }
 
 const defaultPracticeModels: Omit<PracticeModel, "_id">[] = [
@@ -45,7 +46,7 @@ export async function GET() {
     }
     
     // Sort by order field, then by _id for consistent ordering
-    const models = await collection.find({}).sort({ order: 1, _id: 1 }).toArray()
+    const models = await collection.find({ visible: { $ne: false } }).sort({ order: 1, _id: 1 }).toArray()
     
     // Add default "SolidWorks" tool and order for models without them
     const modelsWithDefaults = models.map((model: any, index: number) => ({

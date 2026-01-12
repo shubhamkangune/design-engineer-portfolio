@@ -41,6 +41,8 @@ import {
   Sun,
   Moon,
   FileText,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,6 +75,7 @@ interface Design {
   image: string;
   category: string;
   details?: string;
+  visible?: boolean;
 }
 
 interface PracticeModel {
@@ -84,6 +87,7 @@ interface PracticeModel {
   download?: string;
   tools?: string[];
   order?: number;
+  visible?: boolean;
 }
 
 interface ProfileSettings {
@@ -135,10 +139,12 @@ function SortablePracticeCard({
   model,
   onEdit,
   onDelete,
+  onToggleVisibility,
 }: {
   model: PracticeModel;
   onEdit: () => void;
   onDelete: () => void;
+  onToggleVisibility: () => void;
 }) {
   const {
     attributes,
@@ -168,7 +174,7 @@ function SortablePracticeCard({
         <GripVertical className="h-5 w-5 text-primary" />
       </div>
 
-      <Card className="h-full flex flex-col overflow-hidden group hover:shadow-lg transition-all duration-300">
+      <Card className={`h-full flex flex-col overflow-hidden group hover:shadow-lg transition-all duration-300 ${model.visible === false ? 'opacity-60' : ''}`}>
         {/* Image */}
         <div className="h-40 overflow-hidden relative bg-secondary">
           <img
@@ -181,6 +187,13 @@ function SortablePracticeCard({
               <Badge variant="secondary" className="text-xs">
                 <ExternalLink className="h-3 w-3 mr-1" />
                 3D Viewer
+              </Badge>
+            </div>
+          )}
+          {model.visible === false && (
+            <div className="absolute top-2 left-2">
+              <Badge variant="destructive" className="text-xs">
+                Hidden
               </Badge>
             </div>
           )}
@@ -223,6 +236,14 @@ function SortablePracticeCard({
 
         {/* Actions */}
         <div className="p-4 pt-0 flex gap-2">
+          <Button
+            variant={model.visible !== false ? "default" : "outline"}
+            size="sm"
+            onClick={onToggleVisibility}
+            title={model.visible !== false ? "Hide from website" : "Show on website"}
+          >
+            {model.visible !== false ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -368,7 +389,7 @@ export default function AdminDashboard() {
   async function fetchDesigns() {
     try {
       setLoading(true);
-      const res = await fetch("/api/designs");
+      const res = await fetch("/api/admin/designs");
       const data = await res.json();
       // Ensure data is an array
       setDesigns(Array.isArray(data) ? data : []);
@@ -382,7 +403,7 @@ export default function AdminDashboard() {
 
   async function fetchPracticeModels() {
     try {
-      const res = await fetch("/api/practice-models");
+      const res = await fetch("/api/admin/practice-models");
       const data = await res.json();
       setPracticeModels(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -580,6 +601,32 @@ export default function AdminDashboard() {
       console.error("Failed to reset designs:", error);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function toggleDesignVisibility(id: string, currentVisible: boolean) {
+    try {
+      await fetch(`/api/designs/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ visible: !currentVisible }),
+      });
+      await fetchDesigns();
+    } catch (error) {
+      console.error("Failed to toggle design visibility:", error);
+    }
+  }
+
+  async function togglePracticeVisibility(id: string, currentVisible: boolean) {
+    try {
+      await fetch(`/api/practice-models/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ visible: !currentVisible }),
+      });
+      await fetchPracticeModels();
+    } catch (error) {
+      console.error("Failed to toggle practice model visibility:", error);
     }
   }
 
@@ -868,15 +915,7 @@ export default function AdminDashboard() {
                 </p>
               </div>
 
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setResetConfirm(true)}
-                >
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Reset to Defaults
-                </Button>
+              <div>
                 <Button size="sm" onClick={openCreateModal}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Design
@@ -895,7 +934,7 @@ export default function AdminDashboard() {
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <Card className="h-full flex flex-col overflow-hidden group hover:shadow-lg transition-all duration-300">
+                    <Card className={`h-full flex flex-col overflow-hidden group hover:shadow-lg transition-all duration-300 ${design.visible === false ? 'opacity-60' : ''}`}>
                       {/* Image */}
                       <div className="h-40 overflow-hidden relative bg-secondary">
                         <img
@@ -908,6 +947,13 @@ export default function AdminDashboard() {
                             {design.category}
                           </Badge>
                         </div>
+                        {design.visible === false && (
+                          <div className="absolute top-2 left-2">
+                            <Badge variant="destructive" className="text-xs">
+                              Hidden
+                            </Badge>
+                          </div>
+                        )}
                       </div>
 
                       {/* Content */}
@@ -936,6 +982,14 @@ export default function AdminDashboard() {
 
                       {/* Actions */}
                       <div className="p-4 pt-0 flex gap-2">
+                        <Button
+                          variant={design.visible !== false ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => toggleDesignVisibility(design.id, design.visible !== false)}
+                          title={design.visible !== false ? "Hide from website" : "Show on website"}
+                        >
+                          {design.visible !== false ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
@@ -990,15 +1044,7 @@ export default function AdminDashboard() {
                 </p>
               </div>
 
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setResetPracticeConfirm(true)}
-                >
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Reset to Defaults
-                </Button>
+              <div>
                 <Button size="sm" onClick={openCreatePracticeModal}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Practice Model
@@ -1039,6 +1085,7 @@ export default function AdminDashboard() {
                       model={model}
                       onEdit={() => openEditPracticeModal(model)}
                       onDelete={() => setDeletePracticeConfirm(model.id)}
+                      onToggleVisibility={() => togglePracticeVisibility(model.id, model.visible !== false)}
                     />
                   ))}
                 </div>
