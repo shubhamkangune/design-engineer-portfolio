@@ -279,7 +279,7 @@ export default function HomePage() {
       <section className="relative h-screen flex items-center justify-center overflow-hidden pt-16">
         <div className="absolute inset-0 z-0">
           <img
-            src="/images/abstract_mechanical_blueprint_background.png"
+            src="/images/abstract_mechanical_blueprint_background.webp"
             alt="Mechanical Blueprint Background"
             className="w-full h-full object-cover opacity-10"
             loading="eager"
