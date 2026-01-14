@@ -1912,7 +1912,7 @@ export default function AdminDashboard() {
                   {practiceFormData.tools.map((tool) => (
                     <div
                       key={tool}
-                      className="flex items-center gap-2 bg-blue-100 px-3 py-2 rounded-full text-sm border border-blue-300"
+                      className="flex items-center gap-2 bg-blue-10 px-3 py-2 rounded-full text-sm border border-blue-300"
                     >
                       <span className="font-medium">{tool}</span>
                       <button
