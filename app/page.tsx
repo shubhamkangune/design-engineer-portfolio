@@ -555,7 +555,7 @@ export default function HomePage() {
                     <li>
                       Assisted in designing{" "}
                       <strong className="text-foreground">blanking dies</strong>{" "}
-                      using SolidWorks under senior engineer guidance.
+                      using SolidWorks under senior engineer guidance, following industrial drafting and GD&T practices.
                     </li>
                     <li>
                       Learned 2D/3D modeling workflows, BOM preparation, and{" "}
@@ -799,8 +799,7 @@ export default function HomePage() {
               </h2>
               <p className="text-primary-foreground/80 text-lg leading-relaxed max-w-md">
                 I am actively seeking entry-level opportunities as a Mechanical
-                Design Engineer or Plastic Product Design Trainee. Open to
-                learning and contributing in an industry environment.
+                Design Engineer or Plastic Product Design Trainee. Open to learning and contributing in a professional industry environment. 
               </p>
 
               <div className="space-y-4 pt-6">
