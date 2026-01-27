@@ -304,6 +304,7 @@ export default function AdminDashboard() {
   });
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{ type: "success" | "error"; message: string } | null>(null);
   
   // Dark mode state
   const [isDark, setIsDark] = useState(false);
@@ -775,13 +776,21 @@ export default function AdminDashboard() {
 
     // Check if it's a PDF
     if (file.type !== "application/pdf") {
-      alert("Please upload a PDF file");
+      setToastMessage({
+        type: "error",
+        message: "❌ Please upload a PDF file"
+      });
+      setTimeout(() => setToastMessage(null), 5000);
       return;
     }
 
     // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert("Resume file size should be less than 5MB");
+      setToastMessage({
+        type: "error",
+        message: "❌ Resume file size should be less than 5MB"
+      });
+      setTimeout(() => setToastMessage(null), 5000);
       return;
     }
 
@@ -789,7 +798,18 @@ export default function AdminDashboard() {
     reader.onloadend = () => {
       const base64 = reader.result as string;
       setProfile({ ...profile, resumeUrl: base64, resumeFileName: file.name });
-      alert("Resume uploaded! Click 'Save Profile' to save your changes.");
+      setToastMessage({
+        type: "success",
+        message: `✅ Resume "${file.name}" loaded! Click "Save Profile" to upload it.`
+      });
+      setTimeout(() => setToastMessage(null), 6000);
+    };
+    reader.onerror = () => {
+      setToastMessage({
+        type: "error",
+        message: "❌ Failed to read the file. Please try again."
+      });
+      setTimeout(() => setToastMessage(null), 5000);
     };
     reader.readAsDataURL(file);
   }
@@ -797,23 +817,56 @@ export default function AdminDashboard() {
   async function handleSaveProfile() {
     setSavingProfile(true);
     setProfileSaved(false);
+    setToastMessage(null);
+    
     try {
+      console.log("💾 Saving profile...");
       const response = await fetch("/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(profile),
       });
-      const savedProfile = await response.json();
       
-      // Update local state with the saved profile (includes converted resume URL)
-      if (savedProfile && !savedProfile.error) {
-        setProfile(savedProfile);
+      if (!response.ok) {
+        throw new Error(`Failed to save: ${response.statusText}`);
       }
       
-      setProfileSaved(true);
-      setTimeout(() => setProfileSaved(false), 3000);
+      const savedProfile = await response.json();
+      
+      if (savedProfile.error) {
+        throw new Error(savedProfile.error);
+      }
+      
+      // Update local state with the saved profile (includes converted resume URL)
+      if (savedProfile) {
+        setProfile(savedProfile);
+        console.log("✅ Profile saved successfully");
+        console.log("📄 Resume URL:", savedProfile.resumeUrl);
+        
+        // Show success message with resume info
+        if (profile.resumeUrl?.startsWith("data:application/pdf")) {
+          setToastMessage({
+            type: "success",
+            message: `✅ Profile saved! Resume uploaded successfully: ${savedProfile.resumeUrl}`
+          });
+        } else {
+          setToastMessage({
+            type: "success",
+            message: "✅ Profile saved successfully!"
+          });
+        }
+        
+        setProfileSaved(true);
+        setTimeout(() => setProfileSaved(false), 3000);
+        setTimeout(() => setToastMessage(null), 5000);
+      }
     } catch (error) {
-      console.error("Failed to save profile:", error);
+      console.error("❌ Failed to save profile:", error);
+      setToastMessage({
+        type: "error",
+        message: `❌ Error: ${error instanceof Error ? error.message : "Failed to save profile"}`
+      });
+      setTimeout(() => setToastMessage(null), 8000);
     } finally {
       setSavingProfile(false);
     }
@@ -829,6 +882,32 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            className="fixed top-4 right-4 z-[100] max-w-md"
+          >
+            <div className={`p-4 rounded-lg shadow-lg border ${
+              toastMessage.type === "success" 
+                ? "bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800" 
+                : "bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800"
+            }`}>
+              <p className={`text-sm font-medium ${
+                toastMessage.type === "success" 
+                  ? "text-green-900 dark:text-green-100" 
+                  : "text-red-900 dark:text-red-100"
+              }`}>
+                {toastMessage.message}
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="container mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
