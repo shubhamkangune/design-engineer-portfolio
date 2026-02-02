@@ -7,7 +7,7 @@ export interface PracticeModel {
   _id?: string
   id: string
   name: string
-  image: string // Can be URL path or base64
+  images: string[] // Array of image URLs or base64 strings
   viewer?: string // External Autodesk viewer link
   download?: string // Download link
   tools?: string[] // Design tools/software used
@@ -20,7 +20,7 @@ const defaultPracticeModels: Omit<PracticeModel, "_id">[] = [
   {
     id: "v-block-assembly",
     name: "V-Block Assembly (Practice)",
-    image: "/projects/practice/v-block-assembly.png",
+    images: ["/projects/practice/v-block-assembly.png"],
     viewer: "https://autode.sk/4qfPYu8",
     download: "/cad-files/v-block-assembly.sldasm",
     order: 0,
@@ -28,7 +28,7 @@ const defaultPracticeModels: Omit<PracticeModel, "_id">[] = [
   {
     id: "flat-sprocket",
     name: "Flat Sprocket (Practice)",
-    image: "/projects/practice/flat-sprocket.png",
+    images: ["/projects/practice/flat-sprocket.png"],
     viewer: "https://autode.sk/3MPor4i",
     order: 1,
   },
@@ -50,11 +50,21 @@ export async function GET() {
     const models = await collection.find({ visible: { $ne: false } }).sort({ order: 1, _id: 1 }).toArray()
     
     // Add default "SolidWorks" tool and order for models without them
-    const modelsWithDefaults = models.map((model: any, index: number) => ({
-      ...model,
-      tools: model.tools && model.tools.length > 0 ? model.tools : ["SolidWorks"],
-      order: model.order ?? index,
-    }))
+    // Handle backward compatibility: convert old 'image' field to 'images' array
+    const modelsWithDefaults = models.map((model: any, index: number) => {
+      // Backward compatibility: if old 'image' field exists but 'images' doesn't, convert it
+      let images = model.images;
+      if (!images && model.image) {
+        images = [model.image];
+      }
+      
+      return {
+        ...model,
+        images: images || ["/projects/practice/placeholder.png"],
+        tools: model.tools && model.tools.length > 0 ? model.tools : ["SolidWorks"],
+        order: model.order ?? index,
+      };
+    });
     
     return NextResponse.json(modelsWithDefaults, {
       headers: {

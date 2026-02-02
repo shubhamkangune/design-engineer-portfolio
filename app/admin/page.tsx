@@ -83,7 +83,7 @@ interface PracticeModel {
   _id?: string;
   id: string;
   name: string;
-  image: string;
+  images: string[];
   viewer?: string;
   download?: string;
   tools?: string[];
@@ -180,10 +180,17 @@ function SortablePracticeCard({
         {/* Image */}
         <div className="h-40 overflow-hidden relative bg-secondary">
           <img
-            src={model.image}
+            src={model.images && model.images.length > 0 ? model.images[0] : '/projects/practice/placeholder.png'}
             alt={model.name}
             className="w-full h-full object-cover"
           />
+          {model.images && model.images.length > 1 && (
+            <div className="absolute top-2 left-2">
+              <Badge variant="default" className="text-xs">
+                {model.images.length} images
+              </Badge>
+            </div>
+          )}
           {model.viewer && (
             <div className="absolute top-2 right-2">
               <Badge variant="secondary" className="text-xs">
@@ -359,7 +366,7 @@ export default function AdminDashboard() {
   // Form state for practice models
   const [practiceFormData, setPracticeFormData] = useState({
     name: "",
-    image: "",
+    images: [] as string[],
     viewer: "",
     download: "",
     tools: [] as string[],
@@ -498,7 +505,7 @@ export default function AdminDashboard() {
     setEditingPractice(null);
     setPracticeFormData({
       name: "",
-      image: "",
+      images: [],
       viewer: "",
       download: "",
       tools: ["SolidWorks"],
@@ -533,7 +540,11 @@ export default function AdminDashboard() {
         if (type === "design") {
           setFormData({ ...formData, image: base64 });
         } else {
-          setPracticeFormData({ ...practiceFormData, image: base64 });
+          // Append to images array for practice models
+          setPracticeFormData({ 
+            ...practiceFormData, 
+            images: [...practiceFormData.images, base64] 
+          });
         }
       };
       reader.readAsDataURL(compressedFile);
@@ -541,6 +552,14 @@ export default function AdminDashboard() {
       console.error("Error compressing image:", error);
       alert("Failed to compress image. Please try a different image.");
     }
+  }
+
+  // Remove image from practice model images array
+  function handleRemovePracticeImage(index: number) {
+    setPracticeFormData({
+      ...practiceFormData,
+      images: practiceFormData.images.filter((_, i) => i !== index),
+    });
   }
 
   async function handleSave() {
@@ -645,7 +664,7 @@ export default function AdminDashboard() {
   function openCreatePracticeModal() {
     setPracticeFormData({
       name: "",
-      image: "",
+      images: [],
       viewer: "",
       download: "",
       tools: ["SolidWorks"],
@@ -657,7 +676,7 @@ export default function AdminDashboard() {
   function openEditPracticeModal(model: PracticeModel) {
     setPracticeFormData({
       name: model.name,
-      image: model.image,
+      images: model.images || [],
       viewer: model.viewer || "",
       download: model.download || "",
       tools: model.tools && model.tools.length > 0 ? model.tools : ["SolidWorks"],
@@ -676,8 +695,10 @@ export default function AdminDashboard() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: practiceFormData.name,
-            image:
-              practiceFormData.image || "/projects/practice/placeholder.png",
+            images:
+              practiceFormData.images.length > 0 
+                ? practiceFormData.images 
+                : ["/projects/practice/placeholder.png"],
             viewer: practiceFormData.viewer || undefined,
             download: practiceFormData.download || undefined,
             tools: practiceFormData.tools || ["SolidWorks"],
@@ -690,7 +711,7 @@ export default function AdminDashboard() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: practiceFormData.name,
-            image: practiceFormData.image,
+            images: practiceFormData.images,
             viewer: practiceFormData.viewer || undefined,
             download: practiceFormData.download || undefined,
             tools: practiceFormData.tools || ["SolidWorks"],
@@ -1923,59 +1944,50 @@ export default function AdminDashboard() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Image</label>
-              <div className="flex gap-2">
-                <Input
-                  value={
-                    practiceFormData.image.startsWith("data:")
-                      ? "Base64 image uploaded"
-                      : practiceFormData.image
-                  }
-                  onChange={(e) =>
-                    setPracticeFormData({
-                      ...practiceFormData,
-                      image: e.target.value,
-                    })
-                  }
-                  placeholder="e.g., /projects/practice/model.png"
-                  disabled={practiceFormData.image.startsWith("data:")}
-                />
-                <label className="cursor-pointer">
-                  <Button type="button" variant="outline" size="icon" asChild>
-                    <span>
-                      <Upload className="h-4 w-4" />
-                    </span>
-                  </Button>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleImageUpload(e, "practice")}
-                  />
-                </label>
-              </div>
-              {practiceFormData.image.startsWith("data:") && (
-                <div className="mt-2">
-                  <img
-                    src={practiceFormData.image}
-                    alt="Preview"
-                    className="h-20 w-auto rounded border"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="mt-1 text-destructive"
-                    onClick={() =>
-                      setPracticeFormData({ ...practiceFormData, image: "" })
-                    }
-                  >
-                    Remove image
-                  </Button>
+              <label className="text-sm font-medium">Images</label>
+              
+              {/* Image thumbnails grid */}
+              {practiceFormData.images.length > 0 && (
+                <div className="grid grid-cols-3 gap-2 mb-2">
+                  {practiceFormData.images.map((img, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={img}
+                        alt={`Preview ${index + 1}`}
+                        className="h-24 w-full object-cover rounded border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => handleRemovePracticeImage(index)}
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               )}
+              
+              {/* Upload button */}
+              <label className="cursor-pointer">
+                <Button type="button" variant="outline" className="w-full" asChild>
+                  <span>
+                    <Upload className="h-4 w-4 mr-2" />
+                    {practiceFormData.images.length > 0 ? 'Upload Another Image' : 'Upload Image'}
+                  </span>
+                </Button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleImageUpload(e, "practice")}
+                />
+              </label>
+              
               <p className="text-xs text-muted-foreground">
-                Upload an image (stored as base64) or use a URL path
+                Upload images (stored as base64). Click + to add multiple images.
               </p>
             </div>
 

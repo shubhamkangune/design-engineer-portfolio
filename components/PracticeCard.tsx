@@ -14,11 +14,18 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 interface PracticeModel {
   id: string;
   name: string;
-  image: string;
+  images: string[]; // Array of image URLs or base64 strings
   viewer?: string;
   download?: string;
   tools?: string[];
@@ -38,8 +45,10 @@ export default function PracticeCard({
   model: PracticeModel;
   priority?: boolean;
 }) {
-  // Check if image is base64 or URL
-  const isBase64 = model.image?.startsWith("data:");
+  // Use first image for card thumbnail
+  const firstImage = model.images && model.images.length > 0 ? model.images[0] : "/projects/practice/placeholder.png";
+  const isBase64 = firstImage?.startsWith("data:");
+  const hasMultipleImages = model.images && model.images.length > 1;
 
   return (
     <Card className="h-full flex flex-col overflow-hidden group hover:shadow-lg transition-all duration-300 hover:border-primary/50 relative">
@@ -50,14 +59,14 @@ export default function PracticeCard({
             <button className="w-full h-full relative">
               {isBase64 ? (
                 <img
-                  src={model.image}
+                  src={firstImage}
                   alt={model.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   loading={priority ? "eager" : "lazy"}
                 />
               ) : (
                 <Image
-                  src={model.image}
+                  src={firstImage}
                   alt={model.name}
                   fill
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -67,10 +76,17 @@ export default function PracticeCard({
                   priority={priority}
                 />
               )}
+              
+              {/* Image count indicator */}
+              {hasMultipleImages && (
+                <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                  {model.images.length} images
+                </div>
+              )}
             </button>
           </DialogTrigger>
 
-          <DialogContent>
+          <DialogContent className="max-w-3xl">
             <DialogTitle>{model.name}</DialogTitle>
             <DialogDescription className="mb-4">
               Practice CAD Model
@@ -85,23 +101,57 @@ export default function PracticeCard({
               )}
             </DialogDescription>
 
-            <div className="mb-4 relative h-64">
-              {isBase64 ? (
-                <img
-                  src={model.image}
-                  alt={model.name}
-                  className="w-full h-full object-contain bg-muted-foreground/5"
-                />
-              ) : (
-                <Image
-                  src={model.image}
-                  alt={model.name}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 600px"
-                  className="object-contain bg-muted-foreground/5"
-                />
-              )}
-            </div>
+            {/* Image carousel or single image */}
+            {hasMultipleImages ? (
+              <Carousel className="w-full">
+                <CarouselContent>
+                  {model.images.map((img, index) => {
+                    const imgIsBase64 = img?.startsWith("data:");
+                    return (
+                      <CarouselItem key={index}>
+                        <div className="relative h-96">
+                          {imgIsBase64 ? (
+                            <img
+                              src={img}
+                              alt={`${model.name} - ${index + 1}`}
+                              className="w-full h-full object-contain bg-muted-foreground/5"
+                            />
+                          ) : (
+                            <Image
+                              src={img}
+                              alt={`${model.name} - ${index + 1}`}
+                              fill
+                              sizes="(max-width: 768px) 100vw, 800px"
+                              className="object-contain bg-muted-foreground/5"
+                            />
+                          )}
+                        </div>
+                      </CarouselItem>
+                    );
+                  })}
+                </CarouselContent>
+                <CarouselPrevious />
+                <CarouselNext />
+              </Carousel>
+            ) : (
+              <div className="mb-4 relative h-96">
+                {isBase64 ? (
+                  <img
+                    src={firstImage}
+                    alt={model.name}
+                    className="w-full h-full object-contain bg-muted-foreground/5"
+                  />
+                ) : (
+                  <Image
+                    src={firstImage}
+                    alt={model.name}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 800px"
+                    className="object-contain bg-muted-foreground/5"
+                  />
+                )}
+              </div>
+            )}
 
             <div className="flex gap-3 flex-col sm:flex-row">
               {model.viewer && (

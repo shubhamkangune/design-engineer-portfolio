@@ -33,7 +33,7 @@ interface PracticeModel {
   _id?: string;
   id: string;
   name: string;
-  image: string;
+  images: string[];
   viewer?: string;
   download?: string;
   tools?: string[];
