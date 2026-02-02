@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import useSWR from "swr";
 import { motion } from "framer-motion";
+import { Box } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -25,6 +26,7 @@ interface Design {
   category: string;
   details?: string;
   visible?: boolean;
+  viewer?: string;
 }
 
 interface PracticeModel {
@@ -198,6 +200,18 @@ export default function Designs() {
                                 {design.category}
                               </Badge>
                             </div>
+                            {design.viewer && (
+                              <a
+                                href={design.viewer}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="absolute bottom-4 right-4 bg-primary/90 hover:bg-primary text-primary-foreground p-2.5 rounded-full shadow-lg transition-all duration-300 hover:scale-110 z-10"
+                                title="View 3D Model"
+                              >
+                                <Box className="h-5 w-5" />
+                              </a>
+                            )}
                           </div>
 
                           <CardHeader>

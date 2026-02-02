@@ -76,6 +76,7 @@ interface Design {
   category: string;
   details?: string;
   visible?: boolean;
+  viewer?: string;
 }
 
 interface PracticeModel {
@@ -88,6 +89,7 @@ interface PracticeModel {
   tools?: string[];
   order?: number;
   visible?: boolean;
+  description?: string;
 }
 
 interface ProfileSettings {
@@ -351,6 +353,7 @@ export default function AdminDashboard() {
     category: "",
     image: "",
     details: "",
+    viewer: "",
   });
 
   // Form state for practice models
@@ -360,6 +363,7 @@ export default function AdminDashboard() {
     viewer: "",
     download: "",
     tools: [] as string[],
+    description: "",
   });
 
   useEffect(() => {
@@ -457,6 +461,7 @@ export default function AdminDashboard() {
       category: "",
       image: "",
       details: "",
+      viewer: "",
     });
     setIsCreating(true);
   }
@@ -469,6 +474,7 @@ export default function AdminDashboard() {
       category: design.category,
       image: design.image,
       details: design.details || "",
+      viewer: design.viewer || "",
     });
     setEditingDesign(design);
   }
@@ -483,6 +489,7 @@ export default function AdminDashboard() {
       category: "",
       image: "",
       details: "",
+      viewer: "",
     });
   }
 
@@ -495,6 +502,7 @@ export default function AdminDashboard() {
       viewer: "",
       download: "",
       tools: ["SolidWorks"],
+      description: "",
     });
   }
 
@@ -554,6 +562,7 @@ export default function AdminDashboard() {
             category: formData.category,
             image: formData.image || "/images/3d_blanking_die_cad.png",
             details: formData.details,
+            viewer: formData.viewer || undefined,
           }),
         });
       } else if (editingDesign) {
@@ -567,6 +576,7 @@ export default function AdminDashboard() {
             category: formData.category,
             image: formData.image,
             details: formData.details,
+            viewer: formData.viewer || undefined,
           }),
         });
       }
@@ -639,6 +649,7 @@ export default function AdminDashboard() {
       viewer: "",
       download: "",
       tools: ["SolidWorks"],
+      description: "",
     });
     setIsCreatingPractice(true);
   }
@@ -650,6 +661,7 @@ export default function AdminDashboard() {
       viewer: model.viewer || "",
       download: model.download || "",
       tools: model.tools && model.tools.length > 0 ? model.tools : ["SolidWorks"],
+      description: model.description || "",
     });
     setEditingPractice(model);
   }
@@ -669,6 +681,7 @@ export default function AdminDashboard() {
             viewer: practiceFormData.viewer || undefined,
             download: practiceFormData.download || undefined,
             tools: practiceFormData.tools || ["SolidWorks"],
+            description: practiceFormData.description || "",
           }),
         });
       } else if (editingPractice) {
@@ -681,6 +694,7 @@ export default function AdminDashboard() {
             viewer: practiceFormData.viewer || undefined,
             download: practiceFormData.download || undefined,
             tools: practiceFormData.tools || ["SolidWorks"],
+            description: practiceFormData.description || "",
           }),
         });
       }
@@ -1701,16 +1715,72 @@ export default function AdminDashboard() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Image URL</label>
+              <label className="text-sm font-medium">Image</label>
+              <div className="flex gap-2">
+                <Input
+                  value={
+                    formData.image.startsWith("data:")
+                      ? "Base64 image uploaded"
+                      : formData.image
+                  }
+                  onChange={(e) =>
+                    setFormData({ ...formData, image: e.target.value })
+                  }
+                  placeholder="e.g., /images/my-design.png"
+                  disabled={formData.image.startsWith("data:")}
+                />
+                <label className="cursor-pointer">
+                  <Button type="button" variant="outline" size="icon" asChild>
+                    <span>
+                      <Upload className="h-4 w-4" />
+                    </span>
+                  </Button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleImageUpload(e, "design")}
+                  />
+                </label>
+              </div>
+              {formData.image.startsWith("data:") && (
+                <div className="mt-2">
+                  <img
+                    src={formData.image}
+                    alt="Preview"
+                    className="h-20 w-auto rounded border"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="mt-1 text-destructive"
+                    onClick={() =>
+                      setFormData({ ...formData, image: "" })
+                    }
+                  >
+                    Remove image
+                  </Button>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Upload an image (stored as base64) or use a URL path
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                3D Viewer URL (External Link)
+              </label>
               <Input
-                value={formData.image}
+                value={formData.viewer}
                 onChange={(e) =>
-                  setFormData({ ...formData, image: e.target.value })
+                  setFormData({ ...formData, viewer: e.target.value })
                 }
-                placeholder="e.g., /images/my-design.png"
+                placeholder="e.g., https://autode.sk/4qfPYu8"
               />
               <p className="text-xs text-muted-foreground">
-                Use a path from /public folder (e.g., /images/design.png)
+                Autodesk Viewer or other external 3D viewer link
               </p>
             </div>
 
@@ -1831,6 +1901,25 @@ export default function AdminDashboard() {
                 }
                 placeholder="e.g., V-Block Assembly (Practice)"
               />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description</label>
+              <Textarea
+                value={practiceFormData.description || ""}
+                onChange={(e) =>
+                  setPracticeFormData({
+                    ...practiceFormData,
+                    description: e.target.value,
+                  })
+                }
+                placeholder="Brief description of the practice model"
+                rows={2}
+                maxLength={500}
+              />
+              <p className="text-xs text-muted-foreground text-right">
+                {(practiceFormData.description || "").length}/500 characters
+              </p>
             </div>
 
             <div className="space-y-2">

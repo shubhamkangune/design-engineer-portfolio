@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Cube } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -10,6 +11,8 @@ interface PracticeModel {
   image: string; // public path: /projects/practice/model-name.png
   viewer: string; // Autodesk Viewer short link e.g. https://autode.sk/xxxx
   download?: string; // public path: /cad-files/model-name.sldprt
+  tools?: string[]; // Design tools/software used
+  description?: string; // Brief description
 }
 
 export default function PracticeCard({ model }: { model: PracticeModel }) {
@@ -59,6 +62,19 @@ export default function PracticeCard({ model }: { model: PracticeModel }) {
         <div className="absolute top-4 right-4">
           <Badge variant="secondary" className="font-medium">Practice CAD Model</Badge>
         </div>
+
+        {model.viewer && (
+          <a
+            href={model.viewer}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="absolute bottom-4 right-4 bg-primary/90 hover:bg-primary text-primary-foreground p-2.5 rounded-full shadow-lg transition-all duration-300 hover:scale-110 z-10"
+            title="View 3D Model"
+          >
+            <Cube className="h-5 w-5" />
+          </a>
+        )}
       </div>
 
       <CardHeader>
@@ -66,7 +82,14 @@ export default function PracticeCard({ model }: { model: PracticeModel }) {
       </CardHeader>
 
       <CardContent className="flex-grow">
-        <p className="text-sm text-muted-foreground">Tool: SolidWorks</p>
+        {model.description && (
+          <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{model.description}</p>
+        )}
+        <p className="text-sm text-muted-foreground">
+          {model.tools && model.tools.length > 0 
+            ? `Tools: ${model.tools.join(", ")}` 
+            : "Tool: SolidWorks"}
+        </p>
       </CardContent>
     </Card>
   );

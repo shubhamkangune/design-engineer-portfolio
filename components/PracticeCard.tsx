@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
+import { Box } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -22,6 +23,7 @@ interface PracticeModel {
   download?: string;
   tools?: string[];
   order?: number;
+  description?: string;
 }
 
 // Blur placeholder for loading state
@@ -129,6 +131,19 @@ export default function PracticeCard({
             Practice CAD Model
           </Badge>
         </div>
+
+        {model.viewer && (
+          <a
+            href={model.viewer}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="absolute bottom-4 right-4 bg-primary/90 hover:bg-primary text-primary-foreground p-2.5 rounded-full shadow-lg transition-all duration-300 hover:scale-110 z-10"
+            title="View 3D Model"
+          >
+            <Box className="h-5 w-5" />
+          </a>
+        )}
       </div>
 
       <CardHeader>
@@ -137,7 +152,13 @@ export default function PracticeCard({
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="flex-grow" />
+      <CardContent className="flex-grow">
+        {model.description && (
+          <p className="text-sm text-muted-foreground line-clamp-2">
+            {model.description}
+          </p>
+        )}
+      </CardContent>
 
       {/* Tools at bottom right */}
       {model.tools && model.tools.length > 0 && (

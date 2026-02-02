@@ -13,6 +13,7 @@ export interface PracticeModel {
   tools?: string[] // Design tools/software used
   order?: number // Display order for sorting
   visible?: boolean
+  description?: string // Brief description of the model
 }
 
 const defaultPracticeModels: Omit<PracticeModel, "_id">[] = [
