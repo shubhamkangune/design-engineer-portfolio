@@ -81,6 +81,12 @@ function TypewriterText({ text, className }: { text: string; className?: string 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showCursor, setShowCursor] = useState(true);
 
+  // Reset typewriter when text prop changes (e.g., after API fetch)
+  useEffect(() => {
+    setDisplayText("");
+    setCurrentIndex(0);
+  }, [text]);
+
   useEffect(() => {
     if (currentIndex < text.length) {
       const timeout = setTimeout(() => {
