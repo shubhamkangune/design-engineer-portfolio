@@ -31,7 +31,7 @@ interface ProfileSettings {
 const defaultProfile: Omit<ProfileSettings, "_id" | "updatedAt"> = {
   profilePhoto: "",
   name: "SHUBHAM KANGUNE",
-  title: "Mechanical Design Engineer",
+  title: "Automotive Plastic Trim Design Engineer | CATIA V5 | Interior & Exterior Trims",
   tagline: "Transforming complex engineering challenges into innovative mechanical solutions",
   bio: "Passionate Mechanical Design Engineer with expertise in CAD/CAM, product development, and manufacturing processes. I specialize in creating efficient, cost-effective designs that bridge the gap between concept and production.",
   email: "shubhamkangune@gmail.com",
@@ -104,7 +104,7 @@ export async function PUT(request: NextRequest) {
     // Only update fields that are provided
     if (body.profilePhoto !== undefined) updateData.profilePhoto = body.profilePhoto;
     if (body.name !== undefined) updateData.name = body.name;
-    if (body.title !== undefined) updateData.title = body.title;
+    if (body.title !== undefined) updateData.title = typeof body.title === 'string' ? body.title.replace(/\|\s*$/, '').trim() : body.title;
     if (body.tagline !== undefined) updateData.tagline = body.tagline;
     if (body.bio !== undefined) updateData.bio = body.bio;
     if (body.email !== undefined) updateData.email = body.email;

@@ -14,9 +14,9 @@ const rajdhani = Rajdhani({
 });
 
 export const metadata: Metadata = {
-  title: "Shubham Kangune - Mechanical Design Engineer",
+  title: "Shubham Kangune - Automotive Plastic Trim Design Engineer",
   description:
-    "Portfolio of Shubham Kangune - Mechanical Design Engineer specializing in CAD design, tool & die development, and manufacturing optimization.",
+    "Portfolio of Shubham Kangune - Automotive Plastic Trim Design Engineer specializing in CATIA V5, Interior & Exterior Trims, and manufacturing optimization.",
   icons: {
     icon: [
       { url: "/favicon.webp", type: "image/png" },
@@ -25,9 +25,9 @@ export const metadata: Metadata = {
     apple: "/favicon.webp",
   },
   openGraph: {
-    title: "Shubham Kangune - Mechanical Design Engineer",
+    title: "Shubham Kangune - Automotive Plastic Trim Design Engineer",
     description:
-      "Portfolio of Shubham Kangune - Mechanical Design Engineer specializing in CAD design, tool & die development, and manufacturing optimization.",
+      "Portfolio of Shubham Kangune - Automotive Plastic Trim Design Engineer specializing in CATIA V5, Interior & Exterior Trims, and manufacturing optimization.",
     images: ["/opengraph.jpg"],
   },
 };

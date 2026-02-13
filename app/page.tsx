@@ -326,7 +326,7 @@ export default function HomePage() {
             </h1>
             <div className="text-xl md:text-3xl text-foreground/80 font-light mb-8 max-w-3xl mx-auto h-10 md:h-12">
               <TypewriterText 
-                text={profile?.title || "Mechanical Design Engineer"} 
+                text={(profile?.title || "Automotive Plastic Trim Design Engineer | CATIA V5 | Interior & Exterior Trims").replace(/\|\s*$/, '').trim()} 
                 className="bg-gradient-to-r from-primary via-blue-500 to-primary bg-clip-text text-transparent font-medium"
               />
             </div>

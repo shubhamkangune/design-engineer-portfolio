@@ -301,7 +301,7 @@ export default function AdminDashboard() {
   const [profile, setProfile] = useState<ProfileSettings>({
     profilePhoto: "",
     name: "SHUBHAM KANGUNE",
-    title: "Mechanical Design Engineer",
+    title: "Automotive Plastic Trim Design Engineer | CATIA V5 | Interior & Exterior Trims",
     tagline: "Transforming complex engineering challenges into innovative mechanical solutions",
     bio: "",
     email: "",
@@ -313,6 +313,7 @@ export default function AdminDashboard() {
   });
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ type: "success" | "error"; message: string } | null>(null);
   
   // Dark mode state
@@ -395,6 +396,8 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error("Failed to fetch profile:", error);
+    } finally {
+      setProfileLoaded(true);
     }
   }
 
@@ -1647,7 +1650,7 @@ export default function AdminDashboard() {
               <div className="flex items-center gap-4">
                 <Button 
                   onClick={handleSaveProfile} 
-                  disabled={savingProfile}
+                  disabled={savingProfile || !profileLoaded}
                   className="px-8"
                 >
                   {savingProfile ? (
