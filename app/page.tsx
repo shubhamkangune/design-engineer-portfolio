@@ -228,12 +228,13 @@ export default function HomePage() {
       return;
     }
 
-    const FORMSPREE_ENDPOINT = "https://formspree.io/f/xbdrgwyp";
+    // Use our backend API which sends emails via Quick Mail
+    const CONTACT_API_ENDPOINT = "/api/contact";
 
     setSending(true);
 
     try {
-      const res = await fetch(FORMSPREE_ENDPOINT, {
+      const res = await fetch(CONTACT_API_ENDPOINT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

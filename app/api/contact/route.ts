@@ -1,3 +1,7 @@
+import { NextRequest, NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
+
 interface ContactPayload {
   name: string;
   email: string;
@@ -5,19 +9,43 @@ interface ContactPayload {
   message: string;
 }
 
-export async function sendContactEmail(payload: ContactPayload) {
-  const { name, email, subject, message } = payload;
-
-  const apiKey = process.env.QUICKMAIL_API_KEY || "qm_3957e84071f9675af64331e652e2c74971820cde807e6b723186dda40c55467b";
-  
-  // fallback to target contact email, default to provided owner email
-  const to = process.env.CONTACT_EMAIL || "shubhamcsc4656@gmail.com";
-
-  if (!apiKey) {
-    throw new Error("Quick Mail API key is not configured. Set QUICKMAIL_API_KEY environment variable.");
-  }
-
+export async function POST(request: NextRequest) {
   try {
+    const body: ContactPayload = await request.json();
+    
+    const { name, email, subject, message } = body;
+
+    // Validate required fields
+    if (!name?.trim() || !email?.trim() || !message?.trim()) {
+      return NextResponse.json(
+        { error: "Name, email, and message are required" },
+        { status: 400 }
+      );
+    }
+
+    // Quick Mail API configuration
+    const apiKey = process.env.QUICKMAIL_API_KEY || "qm_3957e84071f9675af64331e652e2c74971820cde807e6b723186dda40c55467b";
+    const contactEmail = process.env.CONTACT_EMAIL || "shubhamcsc4656@gmail.com";
+
+    if (!apiKey) {
+      console.error("Quick Mail API key is not configured");
+      return NextResponse.json(
+        { error: "Email service is not configured" },
+        { status: 500 }
+      );
+    }
+
+    // Function to escape HTML
+    const escapeHtml = (s: string) => {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    };
+
+    // Send email via Quick Mail API
     const response = await fetch('https://quick-mail.remainderzero.com/api/send', {
       method: 'POST',
       headers: {
@@ -25,7 +53,7 @@ export async function sendContactEmail(payload: ContactPayload) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        to: to,
+        to: contactEmail,
         subject: subject || `New message from ${name}`,
         html: `
           <!DOCTYPE html>
@@ -129,7 +157,7 @@ export async function sendContactEmail(payload: ContactPayload) {
                               <p style="margin: 0; color: #718096; font-size: 13px; line-height: 1.6;">
                                 This email was sent from your portfolio contact form<br/>
                                 <span style="color: #a0aec0; font-size: 12px;">
-                                  Powered by Quick Mail API
+                                  Powered by Quick Mail API • ${new Date().toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' })}
                                 </span>
                               </p>
                             </td>
@@ -150,24 +178,29 @@ export async function sendContactEmail(payload: ContactPayload) {
 
     if (!response.ok) {
       const errorData = await response.text();
-      throw new Error(`Quick Mail API error: ${response.status} - ${errorData}`);
+      console.error("Quick Mail API error:", response.status, errorData);
+      return NextResponse.json(
+        { error: "Failed to send email", details: errorData },
+        { status: response.status }
+      );
     }
 
     const result = await response.json();
     console.log("✅ Email sent successfully via Quick Mail:", result);
-    
-    return result;
-  } catch (error) {
-    console.error("❌ Error sending email via Quick Mail:", error);
-    throw error;
-  }
-}
 
-function escapeHtml(s: string) {
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+    return NextResponse.json({ 
+      success: true, 
+      message: "Email sent successfully" 
+    });
+
+  } catch (error) {
+    console.error("Error sending contact email:", error);
+    return NextResponse.json(
+      { 
+        error: "Failed to send email", 
+        details: error instanceof Error ? error.message : String(error) 
+      },
+      { status: 500 }
+    );
+  }
 }

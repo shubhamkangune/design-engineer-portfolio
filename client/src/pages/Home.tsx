@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
-// Using Formspree for contact submissions (no backend required)
+// Using Quick Mail API for contact submissions via backend
 import { toast } from "@/hooks/use-toast";
 
 // Import Assets
@@ -87,13 +87,13 @@ export default function Home() {
       toast({ title: "Validation error", description: "Name, email and message are required." });
       return;
     }
-    // Use Formspree JSON endpoint (no backend). Endpoint provided by owner.
-    const FORMSPREE_ENDPOINT = 'https://formspree.io/f/xbdrgwyp';
+    // Use our backend API which sends emails via Quick Mail
+    const CONTACT_API_ENDPOINT = '/api/contact';
 
     setSending(true);
 
     try {
-      const res = await fetch(FORMSPREE_ENDPOINT, {
+      const res = await fetch(CONTACT_API_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({
@@ -116,7 +116,7 @@ export default function Home() {
         toast({ title: 'Send failed', description: errorMsg });
       }
     } catch (err: any) {
-      console.error('Formspree error:', err);
+      console.error('Contact API error:', err);
       toast({ title: 'Network error', description: 'Failed to send message.' });
     } finally {
       setSending(false);
