@@ -189,11 +189,12 @@ export async function PUT(request: NextRequest) {
     let result;
     if (existing) {
       // Update existing document
-      result = await collection.findOneAndUpdate(
+      const updateResult = await collection.findOneAndUpdate(
         { _id: existing._id },
         { $set: updateData },
         { returnDocument: "after" }
       );
+      result = updateResult;
       console.log("✅ Profile updated successfully in MongoDB");
     } else {
       // Insert new document with defaults merged with updates
@@ -207,16 +208,16 @@ export async function PUT(request: NextRequest) {
     }
 
     if (!result) {
-      console.error("Failed to save profile - result is null");
+      console.error("❌ Failed to save profile - result is null");
       return NextResponse.json(
-        { error: "Failed to save profile" },
+        { error: "Failed to save profile - no result returned" },
         { status: 500 }
       );
     }
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Error updating profile:", error);
+    console.error("❌ Error updating profile:", error);
     return NextResponse.json(
       { error: "Failed to update profile", details: String(error) },
       { status: 500 }
