@@ -25,6 +25,7 @@ interface ProfileSettings {
   linkedin: string;
   skills: SkillCategory[];
   resumeUrl: string;
+  resumeFileName?: string;
   updatedAt: Date;
 }
 
@@ -101,6 +102,10 @@ export async function PUT(request: NextRequest) {
       updatedAt: new Date(),
     };
 
+    // Check if profile exists first (moved to top to avoid duplicate queries)
+    const existing = await collection.findOne({});
+    console.log("🔍 Existing profile found:", !!existing);
+
     // Only update fields that are provided
     if (body.profilePhoto !== undefined) updateData.profilePhoto = body.profilePhoto;
     if (body.name !== undefined) updateData.name = body.name;
@@ -121,16 +126,17 @@ export async function PUT(request: NextRequest) {
         console.log("🔄 Processing base64 PDF upload...");
         
         try {
-          // Get existing profile to delete old resume file
-          const existing = await collection.findOne({});
           
           // Extract base64 data
           const base64Data = body.resumeUrl.replace("data:application/pdf;base64,", "");
           const buffer = Buffer.from(base64Data, "base64");
           console.log("📦 Converted base64 to buffer:", buffer.length, "bytes");
           
-          // Generate filename
-          const filename = `resume_${Date.now()}.pdf`;
+          // Generate filename using original name if available
+          const originalName = body.resumeFileName || `resume_${Date.now()}.pdf`;
+          const fileExt = originalName.endsWith('.pdf') ? '' : '.pdf';
+          const sanitizedName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/\.pdf$/, '');
+          const filename = `${sanitizedName}_${Date.now()}${fileExt}`;
           const uploadDir = path.join(process.cwd(), "public", "uploads");
           
           // Ensure upload directory exists
@@ -158,8 +164,9 @@ export async function PUT(request: NextRequest) {
             }
           }
           
-          // Update with new file path
+          // Update with new file path and filename
           updateData.resumeUrl = `/uploads/${filename}`;
+          updateData.resumeFileName = originalName;
           console.log("✅ Resume URL saved to database:", updateData.resumeUrl);
           
         } catch (fileError) {
@@ -178,10 +185,6 @@ export async function PUT(request: NextRequest) {
         console.log("✅ Resume URL saved (direct path):", updateData.resumeUrl);
       }
     }
-
-    // Check if profile exists first
-    const existing = await collection.findOne({});
-    console.log("🔍 Existing profile found:", !!existing);
 
     let result;
     if (existing) {

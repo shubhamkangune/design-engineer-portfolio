@@ -166,7 +166,7 @@ export default function Home() {
                 View My Designs
               </Button>
               <Button variant="outline" size="lg" className="font-heading font-bold text-lg h-12 px-8" asChild data-testid="button-download-cv">
-                <a href={RESUME_LINK} target="_blank" rel="noopener noreferrer">
+                <a href={RESUME_LINK} download="Resume.pdf" rel="noopener noreferrer">
                   <Download className="mr-2 h-4 w-4" /> Download CV
                 </a>
               </Button>

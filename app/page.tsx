@@ -355,7 +355,7 @@ export default function HomePage() {
                 asChild
                 data-testid="button-download-cv"
               >
-                <a href={profile?.resumeUrl || DEFAULT_RESUME_LINK} target="_blank" rel="noopener noreferrer">
+                <a href={profile?.resumeUrl || DEFAULT_RESUME_LINK} download="Resume.pdf" rel="noopener noreferrer">
                   <Download className="mr-2 h-4 w-4" /> Download CV
                 </a>
               </Button>

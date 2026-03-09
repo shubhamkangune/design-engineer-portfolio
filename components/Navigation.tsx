@@ -110,7 +110,7 @@ export default function Navigation() {
           <Button asChild size="sm" className="ml-4 font-heading font-bold">
             <a
               href={resumeUrl}
-              target="_blank"
+              download="Shubham_Kangune_Resume.pdf"
               rel="noopener noreferrer"
               data-testid="nav-resume"
             >
@@ -170,7 +170,7 @@ export default function Navigation() {
                 className="w-full mt-4"
                 data-testid="mobile-nav-resume"
               >
-                <a href={resumeUrl} target="_blank" rel="noopener noreferrer">
+                <a href={resumeUrl} download="Resume.pdf" rel="noopener noreferrer">
                   <Download className="mr-2 h-4 w-4" /> Download Resume
                 </a>
               </Button>

@@ -74,7 +74,7 @@ export default function Navigation({ currentPath }: NavigationProps) {
             )
           ))}
           <Button asChild size="sm" className="ml-4 font-heading font-bold">
-            <a href={RESUME_LINK} target="_blank" rel="noopener noreferrer" data-testid="nav-resume">
+            <a href={RESUME_LINK} download="Resume.pdf" rel="noopener noreferrer" data-testid="nav-resume">
               <Download className="mr-2 h-4 w-4" /> Resume
             </a>
           </Button>
@@ -112,7 +112,7 @@ export default function Navigation({ currentPath }: NavigationProps) {
                 )
               ))}
               <Button asChild className="w-full mt-4" data-testid="mobile-nav-resume">
-                <a href={RESUME_LINK} target="_blank" rel="noopener noreferrer">
+                <a href={RESUME_LINK} download="Resume.pdf" rel="noopener noreferrer">
                   <Download className="mr-2 h-4 w-4" /> Download Resume
                 </a>
               </Button>

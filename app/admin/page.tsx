@@ -1442,10 +1442,18 @@ export default function AdminDashboard() {
                           <p className="text-sm text-green-600 font-medium mb-1">
                             ✓ Resume uploaded
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground break-all">
                             {profile.resumeUrl.startsWith("data:") 
                               ? (profile.resumeFileName || "New PDF ready to save") 
-                              : profile.resumeUrl.split("/").pop()}
+                              : (() => {
+                                  // Display the original filename if available, otherwise show a clean version
+                                  if (profile.resumeFileName) {
+                                    return profile.resumeFileName;
+                                  }
+                                  const filename = profile.resumeUrl.split("/").pop() || "Resume.pdf";
+                                  // Remove timestamp from filename for cleaner display
+                                  return filename.replace(/_(\d{13})(\.pdf)?$/, '.pdf');
+                                })()}
                           </p>
                           {profile.resumeUrl.startsWith("data:") && (
                             <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
