@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/mongodb";
-import { writeFile, mkdir, unlink, readdir } from "fs/promises";
-import path from "path";
-import { existsSync } from "fs";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +23,7 @@ interface ProfileSettings {
   skills: SkillCategory[];
   resumeUrl: string;
   resumeFileName?: string;
+  resumeBase64?: string; // Store resume file in database for Vercel
   updatedAt: Date;
 }
 
@@ -118,70 +116,26 @@ export async function PUT(request: NextRequest) {
     if (body.linkedin !== undefined) updateData.linkedin = body.linkedin;
     if (body.skills !== undefined) (updateData as any).skills = body.skills;
     
-    // Handle resume upload - save base64 to file
+    // Handle resume upload
     if (body.resumeUrl !== undefined) {
       console.log("📄 Resume URL detected:", body.resumeUrl.substring(0, 50) + "...");
       
       if (body.resumeUrl.startsWith("data:application/pdf;base64,")) {
         console.log("🔄 Processing base64 PDF upload...");
         
-        try {
-          
-          // Extract base64 data
-          const base64Data = body.resumeUrl.replace("data:application/pdf;base64,", "");
-          const buffer = Buffer.from(base64Data, "base64");
-          console.log("📦 Converted base64 to buffer:", buffer.length, "bytes");
-          
-          // Generate filename using original name if available
-          const originalName = body.resumeFileName || `resume_${Date.now()}.pdf`;
-          const fileExt = originalName.endsWith('.pdf') ? '' : '.pdf';
-          const sanitizedName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/\.pdf$/, '');
-          const filename = `${sanitizedName}_${Date.now()}${fileExt}`;
-          const uploadDir = path.join(process.cwd(), "public", "uploads");
-          
-          // Ensure upload directory exists
-          console.log("📁 Ensuring upload directory exists:", uploadDir);
-          await mkdir(uploadDir, { recursive: true });
-          
-          // Write file
-          const filePath = path.join(uploadDir, filename);
-          await writeFile(filePath, buffer);
-          console.log("✅ Resume file written successfully:", filePath);
-          
-          // Delete old resume file if it exists and is in uploads folder
-          if (existing?.resumeUrl && existing.resumeUrl.startsWith("/uploads/")) {
-            const oldFilename = existing.resumeUrl.replace("/uploads/", "");
-            const oldFilePath = path.join(uploadDir, oldFilename);
-            
-            try {
-              if (existsSync(oldFilePath)) {
-                await unlink(oldFilePath);
-                console.log("🗑️ Deleted old resume file:", oldFilename);
-              }
-            } catch (deleteError) {
-              console.warn("⚠️ Could not delete old resume file:", deleteError);
-              // Don't fail the upload if deletion fails
-            }
-          }
-          
-          // Update with new file path and filename
-          updateData.resumeUrl = `/uploads/${filename}`;
-          updateData.resumeFileName = originalName;
-          console.log("✅ Resume URL saved to database:", updateData.resumeUrl);
-          
-        } catch (fileError) {
-          console.error("❌ Error saving resume file:", fileError);
-          return NextResponse.json(
-            { 
-              error: "Failed to save resume file", 
-              details: fileError instanceof Error ? fileError.message : String(fileError) 
-            },
-            { status: 500 }
-          );
-        }
+        // For Vercel compatibility, store the base64 directly in database
+        // instead of writing to file system
+        updateData.resumeBase64 = body.resumeUrl;
+        updateData.resumeFileName = body.resumeFileName || "Resume.pdf";
+        updateData.resumeUrl = "/api/profile/resume"; // Serve from API route
+        console.log("✅ Resume stored in database (Vercel-compatible)");
+        
       } else if (body.resumeUrl) {
         // It's already a URL path, just save it
         updateData.resumeUrl = body.resumeUrl;
+        if (body.resumeFileName) {
+          updateData.resumeFileName = body.resumeFileName;
+        }
         console.log("✅ Resume URL saved (direct path):", updateData.resumeUrl);
       }
     }
